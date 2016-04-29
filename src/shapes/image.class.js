@@ -17,7 +17,7 @@
    * Image class
    * @class fabric.Image
    * @extends fabric.Object
-   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1/#images}
+   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1#images}
    * @see {@link fabric.Image#initialize} for constructor definition
    */
   fabric.Image = fabric.util.createClass(fabric.Object, /** @lends fabric.Image.prototype */ {
@@ -30,7 +30,7 @@
     type: 'image',
 
     /**
-     * crossOrigin value (one of "", "anonymous", "allow-credentials")
+     * crossOrigin value (one of "", "anonymous", "use-credentials")
      * @see https://developer.mozilla.org/en-US/docs/HTML/CORS_settings_attributes
      * @type String
      * @default
@@ -65,6 +65,14 @@
     meetOrSlice: 'meet',
 
     /**
+     * Width of a stroke.
+     * For image quality a stroke multiple of 2 gives better results.
+     * @type Number
+     * @default
+     */
+    strokeWidth: 0,
+
+    /**
      * private
      * contains last value of scaleX to detect
      * if the Image got resized after the last Render
@@ -88,18 +96,10 @@
      */
     initialize: function(element, options) {
       options || (options = { });
-
       this.filters = [ ];
       this.resizeFilters = [ ];
       this.callSuper('initialize', options);
-
       this._initElement(element, options);
-      this._initConfig(options);
-
-      if (options.filters) {
-        this.filters = options.filters;
-        this.applyFilters();
-      }
     },
 
     /**
@@ -200,16 +200,32 @@
      * @return {Object} Object representation of an instance
      */
     toObject: function(propertiesToInclude) {
-      return extend(this.callSuper('toObject', propertiesToInclude), {
-        src: this._originalElement.src || this._originalElement._src,
-        filters: this.filters.map(function(filterObj) {
-          return filterObj && filterObj.toObject();
-        }),
+      var filters = [ ], element = this._originalElement;
+      this.filters.forEach(function(filterObj) {
+        if (filterObj) {
+          filters.push(filterObj.toObject());
+        }
+      });
+      var object = extend(this.callSuper('toObject', propertiesToInclude), {
+        src: element ? element.src || element._src : '',
+        filters: filters,
         crossOrigin: this.crossOrigin,
         alignX: this.alignX,
         alignY: this.alignY,
         meetOrSlice: this.meetOrSlice
       });
+
+      if (this.resizeFilters.length > 0) {
+        object.resizeFilters = this.resizeFilters.map(function(filterObj) {
+          return filterObj && filterObj.toObject();
+        });
+      }
+
+      if (!this.includeDefaultValues) {
+        this._removeDefaultValues(object);
+      }
+
+      return object;
     },
 
     /* _TO_SVG_START_ */
@@ -219,7 +235,7 @@
      * @return {String} svg representation of an instance
      */
     toSVG: function(reviver) {
-      var markup = [], x = -this.width / 2, y = -this.height / 2,
+      var markup = this._createBaseSVGMarkup(), x = -this.width / 2, y = -this.height / 2,
           preserveAspectRatio = 'none';
       if (this.group && this.group.type === 'path-group') {
         x = this.left;
@@ -362,6 +378,7 @@
       }
       return canvasEl;
     },
+
     /**
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
@@ -395,6 +412,7 @@
 
       this._renderStroke(ctx);
     },
+
     /**
      * @private, needed to check if image needs resize
      */
@@ -451,9 +469,10 @@
      * called by the constructor.
      * @private
      * @param {HTMLImageElement|String} element The element representing the image
+     * @param {Object} [options] Options object
      */
-    _initElement: function(element) {
-      this.setElement(fabric.util.getById(element));
+    _initElement: function(element, options) {
+      this.setElement(fabric.util.getById(element), null, options);
       fabric.util.addClass(this.getElement(), fabric.Image.CSS_CANVAS);
     },
 
@@ -472,12 +491,12 @@
 
     /**
      * @private
-     * @param {Object} object Object with filters property
+     * @param {Array} filters to be initialized
      * @param {Function} callback Callback to invoke when all fabric.Image.filters instances are created
      */
-    _initFilters: function(object, callback) {
-      if (object.filters && object.filters.length) {
-        fabric.util.enlivenObjects(object.filters, function(enlivenedObjects) {
+    _initFilters: function(filters, callback) {
+      if (filters && filters.length) {
+        fabric.util.enlivenObjects(filters, function(enlivenedObjects) {
           callback && callback(enlivenedObjects);
         }, 'fabric.Image.filters');
       }
@@ -535,10 +554,13 @@
    */
   fabric.Image.fromObject = function(object, callback) {
     fabric.util.loadImage(object.src, function(img) {
-      fabric.Image.prototype._initFilters.call(object, object, function(filters) {
+      fabric.Image.prototype._initFilters.call(object, object.filters, function(filters) {
         object.filters = filters || [ ];
-        var instance = new fabric.Image(img, object);
-        callback && callback(instance);
+        fabric.Image.prototype._initFilters.call(object, object.resizeFilters, function(resizeFilters) {
+          object.resizeFilters = resizeFilters || [ ];
+          var instance = new fabric.Image(img, object);
+          callback && callback(instance);
+        });
       });
     }, null, object.crossOrigin);
   };
@@ -575,28 +597,13 @@
    */
   fabric.Image.fromElement = function(element, callback, options) {
     var parsedAttributes = fabric.parseAttributes(element, fabric.Image.ATTRIBUTE_NAMES),
-        align = 'xMidYMid', meetOrSlice = 'meet', alignX, alignY, aspectRatioAttrs;
+        preserveAR;
 
     if (parsedAttributes.preserveAspectRatio) {
-      aspectRatioAttrs = parsedAttributes.preserveAspectRatio.split(' ');
+      preserveAR = fabric.util.parsePreserveAspectRatioAttribute(parsedAttributes.preserveAspectRatio);
+      extend(parsedAttributes, preserveAR);
     }
 
-    if (aspectRatioAttrs && aspectRatioAttrs.length) {
-      meetOrSlice = aspectRatioAttrs.pop();
-      if (meetOrSlice !== 'meet' && meetOrSlice !== 'slice') {
-        align = meetOrSlice;
-        meetOrSlice = 'meet';
-      }
-      else if (aspectRatioAttrs.length) {
-        align = aspectRatioAttrs.pop();
-      }
-    }
-    //divide align in alignX and alignY
-    alignX = align !== 'none' ? align.slice(1, 4) : 'none';
-    alignY = align !== 'none' ? align.slice(5, 8) : 'none';
-    parsedAttributes.alignX = alignX;
-    parsedAttributes.alignY = alignY;
-    parsedAttributes.meetOrSlice = meetOrSlice;
     fabric.Image.fromURL(parsedAttributes['xlink:href'], callback,
       extend((options ? fabric.util.object.clone(options) : { }), parsedAttributes));
   };

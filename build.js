@@ -53,7 +53,7 @@ else if (minifier === 'closure') {
   mininfierCmd = 'java -jar ' + rootPath + '/lib/google_closure_compiler.jar --js fabric.js --js_output_file fabric.min.js' + sourceMapFlags;
 }
 else if (minifier === 'uglifyjs') {
-  mininfierCmd = 'uglifyjs ' + amdUglifyFlags  + ' --output fabric.min.js fabric.js' + sourceMapFlags;
+  mininfierCmd = 'uglifyjs ' + amdUglifyFlags + ' --compress --mangle --output fabric.min.js fabric.js' + sourceMapFlags;
 }
 
 var buildSh = 'build-sh' in buildArgsAsObject;
@@ -244,6 +244,10 @@ var filesToInclude = [
   ifSpecifiedInclude('itext', 'src/mixins/itext_key_behavior.mixin.js'),
   ifSpecifiedInclude('itext', 'src/mixins/itext.svg_export.js'),
 
+  ifSpecifiedInclude('textbox', 'src/shapes/textbox.class.js'),
+  ifSpecifiedInclude('textbox', 'src/mixins/textbox_behavior.mixin.js'),
+  ifSpecifiedInclude('textbox', 'src/mixins/textbox_click_behavior.mixin.js'),
+
   ifSpecifiedInclude('node', 'src/node.js'),
 
   ifSpecifiedAMDInclude(amdLib)
@@ -282,7 +286,7 @@ else if (buildSh) {
     minFilesStr + ' >> ' + path + '\n')
 }
 else {
-  // Change the current working directory
+  // change the current working directory
   process.chdir(distributionPath);
 
   appendFileContents(filesToInclude, function() {

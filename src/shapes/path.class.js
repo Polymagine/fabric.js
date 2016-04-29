@@ -33,7 +33,7 @@
    * Path class
    * @class fabric.Path
    * @extends fabric.Object
-   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1/#path_and_pathgroup}
+   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1#path_and_pathgroup}
    * @see {@link fabric.Path#initialize} for constructor definition
    */
   fabric.Path = fabric.util.createClass(fabric.Object, /** @lends fabric.Path.prototype */ {
@@ -78,7 +78,7 @@
       this.setOptions(options);
 
       if (!path) {
-        throw new Error('`path` argument is required');
+        path = [ ];
       }
 
       var fromArray = _toString.call(path) === '[object Array]';
@@ -96,7 +96,7 @@
         this.path = this._parsePath();
       }
 
-      this._setPositionDimensions();
+      this._setPositionDimensions(options);
 
       if (options.sourcePath) {
         this.setSourcePath(options.sourcePath);
@@ -105,8 +105,9 @@
 
     /**
      * @private
+     * @param {Object} options Options object
      */
-    _setPositionDimensions: function() {
+    _setPositionDimensions: function(options) {
       var calcDim = this._parseDimensions();
 
       this.minX = calcDim.left;
@@ -114,20 +115,21 @@
       this.width = calcDim.width;
       this.height = calcDim.height;
 
-      calcDim.left += this.originX === 'center'
-        ? this.width / 2
-        : this.originX === 'right'
-          ? this.width
-          : 0;
+      if (typeof options.left === 'undefined') {
+        this.left = calcDim.left + (this.originX === 'center'
+          ? this.width / 2
+          : this.originX === 'right'
+            ? this.width
+            : 0);
+      }
 
-      calcDim.top += this.originY === 'center'
-        ? this.height / 2
-        : this.originY === 'bottom'
-          ? this.height
-          : 0;
-
-      this.top = this.top || calcDim.top;
-      this.left = this.left || calcDim.left;
+      if (typeof options.top === 'undefined') {
+        this.top = calcDim.top + (this.originY === 'center'
+          ? this.height / 2
+          : this.originY === 'bottom'
+            ? this.height
+            : 0);
+      }
 
       this.pathOffset = this.pathOffset || {
         x: this.minX + this.width / 2,
@@ -886,10 +888,10 @@
         aY.push(y);
       }
 
-      var minX = min(aX),
-          minY = min(aY),
-          maxX = max(aX),
-          maxY = max(aY),
+      var minX = min(aX) || 0,
+          minY = min(aY) || 0,
+          maxX = max(aX) || 0,
+          maxY = max(aY) || 0,
           deltaX = maxX - minX,
           deltaY = maxY - minY,
 

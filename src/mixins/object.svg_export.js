@@ -3,9 +3,10 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
 
   /**
    * Returns styles-string for svg-export
+   * @param {Boolean} skipShadow a boolean to skip shadow filter output
    * @return {String}
    */
-  getSvgStyles: function() {
+  getSvgStyles: function(skipShadow) {
 
     var fill = this.fill
           ? (this.fill.toLive ? 'url(#SVGID_' + this.fill.id + ')' : this.fill)
@@ -16,14 +17,14 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
           : 'none',
 
         strokeWidth = this.strokeWidth ? this.strokeWidth : '0',
-        strokeDashArray = this.strokeDashArray ? this.strokeDashArray.join(' ') : '',
+        strokeDashArray = this.strokeDashArray ? this.strokeDashArray.join(' ') : 'none',
         strokeLineCap = this.strokeLineCap ? this.strokeLineCap : 'butt',
         strokeLineJoin = this.strokeLineJoin ? this.strokeLineJoin : 'miter',
         strokeMiterLimit = this.strokeMiterLimit ? this.strokeMiterLimit : '4',
         opacity = typeof this.opacity !== 'undefined' ? this.opacity : '1',
 
         visibility = this.visible ? '' : ' visibility: hidden;',
-        filter = this.shadow ? 'filter: url(#SVGID_' + this.shadow.id + ');' : '';
+        filter = skipShadow ? '' : this.getSvgFilter();
 
     return [
       'stroke: ', stroke, '; ',
@@ -41,6 +42,14 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
   },
 
   /**
+   * Returns filter for svg shadow
+   * @return {String}
+   */
+  getSvgFilter: function() {
+    return this.shadow ? 'filter: url(#SVGID_' + this.shadow.id + ');' : '';
+  },
+
+  /**
    * Returns transform-string for svg-export
    * @return {String}
    */
@@ -50,8 +59,9 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
     }
     var toFixed = fabric.util.toFixed,
         angle = this.getAngle(),
-        vpt = !this.canvas || this.canvas.svgViewportTransformation ? this.getViewportTransform() : [1, 0, 0, 1, 0, 0],
-        center = fabric.util.transformPoint(this.getCenterPoint(), vpt),
+        skewX = (this.getSkewX() % 360),
+        skewY = (this.getSkewY() % 360),
+        center = this.getCenterPoint(),
 
         NUM_FRACTION_DIGITS = fabric.Object.NUM_FRACTION_DIGITS,
 
@@ -65,24 +75,28 @@ fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prot
           ? (' rotate(' + toFixed(angle, NUM_FRACTION_DIGITS) + ')')
           : '',
 
-        scalePart = (this.scaleX === 1 && this.scaleY === 1 && vpt[0] === 1 && vpt[3] === 1)
+        scalePart = (this.scaleX === 1 && this.scaleY === 1)
           ? '' :
           (' scale(' +
-            toFixed(this.scaleX * vpt[0], NUM_FRACTION_DIGITS) +
+            toFixed(this.scaleX, NUM_FRACTION_DIGITS) +
             ' ' +
-            toFixed(this.scaleY * vpt[3], NUM_FRACTION_DIGITS) +
+            toFixed(this.scaleY, NUM_FRACTION_DIGITS) +
           ')'),
 
-        addTranslateX = this.type === 'path-group' ? this.width * vpt[0] : 0,
+        skewXPart = skewX !== 0 ? ' skewX(' + toFixed(skewX, NUM_FRACTION_DIGITS) + ')' : '',
+
+        skewYPart = skewY !== 0 ? ' skewY(' + toFixed(skewY, NUM_FRACTION_DIGITS) + ')' : '',
+
+        addTranslateX = this.type === 'path-group' ? this.width : 0,
 
         flipXPart = this.flipX ? ' matrix(-1 0 0 1 ' + addTranslateX + ' 0) ' : '',
 
-        addTranslateY = this.type === 'path-group' ? this.height * vpt[3] : 0,
+        addTranslateY = this.type === 'path-group' ? this.height : 0,
 
         flipYPart = this.flipY ? ' matrix(1 0 0 -1 0 ' + addTranslateY + ')' : '';
 
     return [
-      translatePart, anglePart, scalePart, flipXPart, flipYPart
+      translatePart, anglePart, scalePart, flipXPart, flipYPart, skewXPart, skewYPart
     ].join('');
   },
 

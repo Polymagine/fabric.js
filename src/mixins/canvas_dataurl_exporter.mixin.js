@@ -44,6 +44,10 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
           height: options.height
         };
 
+    if (this._isRetinaScaling()) {
+      multiplier *= fabric.devicePixelRatio;
+    }
+
     if (multiplier !== 1) {
       return this.__toDataURLWithMultiplier(format, quality, cropping, multiplier);
     }
@@ -57,9 +61,9 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
    */
   __toDataURL: function(format, quality, cropping) {
 
-    this.renderAll(true);
+    this.renderAll();
 
-    var canvasEl = this.upperCanvasEl || this.lowerCanvasEl,
+    var canvasEl = this.contextContainer.canvas,
         croppedCanvasEl = this.__getCroppedCanvas(canvasEl, cropping);
 
     // to avoid common confusion https://github.com/kangax/fabric.js/issues/806
@@ -70,9 +74,6 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
     var data = (fabric.StaticCanvas.supports('toDataURLWithQuality'))
               ? (croppedCanvasEl || canvasEl).toDataURL('image/' + format, quality)
               : (croppedCanvasEl || canvasEl).toDataURL('image/' + format);
-
-    this.contextTop && this.clearContext(this.contextTop);
-    this.renderAll();
 
     if (croppedCanvasEl) {
       croppedCanvasEl = null;
@@ -118,13 +119,13 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
         scaledHeight = origHeight * multiplier,
         activeObject = this.getActiveObject(),
         activeGroup = this.getActiveGroup(),
-
-        ctx = this.contextTop || this.contextContainer;
+        ctx = this.contextContainer;
 
     if (multiplier > 1) {
-      this.setWidth(scaledWidth).setHeight(scaledHeight);
+      this.setDimensions({ width: scaledWidth, height: scaledHeight });
     }
-    ctx.scale(multiplier, multiplier);
+    ctx.save();
+    ctx.scale(multiplier / fabric.devicePixelRatio, multiplier / fabric.devicePixelRatio);
 
     if (cropping.left) {
       cropping.left *= multiplier;
@@ -153,17 +154,13 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, /** @lends fabric.Stati
       this.deactivateAll();
     }
 
-    this.renderAll(true);
-
     var data = this.__toDataURL(format, quality, cropping);
 
     // restoring width, height for `renderAll` to draw
     // background properly (while context is scaled)
     this.width = origWidth;
     this.height = origHeight;
-
-    ctx.scale(1 / multiplier,  1 / multiplier);
-    this.setWidth(origWidth).setHeight(origHeight);
+    this.setDimensions({ width: origWidth, height: origHeight });
 
     if (activeGroup) {
       this._restoreBordersControlsOnGroup(activeGroup);

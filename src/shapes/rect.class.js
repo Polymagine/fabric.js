@@ -6,7 +6,7 @@
       extend = fabric.util.object.extend;
 
   if (fabric.Rect) {
-    console.warn('fabric.Rect is already defined');
+    fabric.warn('fabric.Rect is already defined');
     return;
   }
 
@@ -90,7 +90,7 @@
 
       // optimize 1x1 case (used in spray brush)
       if (this.width === 1 && this.height === 1) {
-        ctx.fillRect(0, 0, 1, 1);
+        ctx.fillRect(-0.5, -0.5, 1, 1);
         return;
       }
 

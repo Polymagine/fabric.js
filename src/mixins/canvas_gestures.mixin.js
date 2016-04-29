@@ -48,22 +48,26 @@
       }
 
       var self = this.__gesturesParams.self,
-              t = this._currentTransform;
+              t = this._currentTransform,
+              e = this.__gesturesParams.e;
 
       t.action = 'scale';
       t.originX = t.originY = 'center';
       this._setOriginToCenter(t.target);
 
-      this._scaleObjectBy(self.scale);
+      this._scaleObjectBy(self.scale, e);
 
       if (self.rotation !== 0) {
         t.action = 'rotate';
-        this._rotateObjectByAngle(self.rotation);
+        this._rotateObjectByAngle(self.rotation, e);
       }
+
+      this._setCenterToOrigin(t.target);
 
       this.renderAll();
       t.action = 'drag';
     },
+
     /**
      * Method that defines actions when an Event.js drag is detected.
      *
@@ -75,6 +79,7 @@
         e: e, self: self
       });
     },
+
     /**
      * Method that defines actions when an Event.js orientation event is detected.
      *
@@ -86,6 +91,7 @@
         e: e, self: self
       });
     },
+
     /**
      * Method that defines actions when an Event.js shake event is detected.
      *
@@ -97,6 +103,7 @@
         e: e, self: self
       });
     },
+
     /**
      * Method that defines actions when an Event.js longpress event is detected.
      *
@@ -108,13 +115,13 @@
         e: e, self: self
       });
     },
+
     /**
      * Scales an object by a factor
      * @param {Number} s The scale factor to apply to the current scale level
-     * @param {String} by Either 'x' or 'y' - specifies dimension constraint by which to scale an object.
-     *                    When not provided, an object is scaled by both dimensions equally
+     * @param {Event} e Event object by Event.js
      */
-    _scaleObjectBy: function(s, by) {
+    _scaleObjectBy: function(s, e) {
       var t = this._currentTransform,
               target = t.target,
               lockScalingX = target.get('lockScalingX'),
@@ -126,32 +133,30 @@
 
       target._scaling = true;
 
-      var constraintPosition = target.translateToOriginPoint(target.getCenterPoint(), t.originX, t.originY);
+      var constraintPosition = target.translateToOriginPoint(target.getCenterPoint(), t.originX, t.originY),
+          dim = target._getTransformedDimensions();
 
-      if (!by) {
-        t.newScaleX = t.scaleX * s;
-        t.newScaleY = t.scaleY * s;
-        if (!lockScalingX) {
-          target.set('scaleX', t.scaleX * s);
-        }
-        if (!lockScalingY) {
-          target.set('scaleY', t.scaleY * s);
-        }
-      }
+      this._setObjectScale(new fabric.Point(t.scaleX * dim.x * s / target.scaleX, t.scaleY * dim.y * s / target.scaleY),
+        t, lockScalingX, lockScalingY, null, target.get('lockScalingFlip'), dim);
 
       target.setPositionByOrigin(constraintPosition, t.originX, t.originY);
+
+      this._fire('scaling', target, e);
     },
+
     /**
      * Rotates object by an angle
      * @param {Number} curAngle The angle of rotation in degrees
+     * @param {Event} e Event object by Event.js
      */
-    _rotateObjectByAngle: function(curAngle) {
+    _rotateObjectByAngle: function(curAngle, e) {
       var t = this._currentTransform;
 
       if (t.target.get('lockRotation')) {
         return;
       }
       t.target.angle = radiansToDegrees(degreesToRadians(curAngle) + t.theta);
+      this._fire('rotating', t.target, e);
     }
   });
 })();

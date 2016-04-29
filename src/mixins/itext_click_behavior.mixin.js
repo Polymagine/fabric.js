@@ -84,7 +84,9 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
    */
   initMousedownHandler: function() {
     this.on('mousedown', function(options) {
-
+      if (!this.editable) {
+        return;
+      }
       var pointer = this.canvas.getPointer(options.e);
 
       this.__mousedownX = pointer.x;
@@ -122,12 +124,12 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
   initMouseupHandler: function() {
     this.on('mouseup', function(options) {
       this.__isMousedown = false;
-      if (this._isObjectMoved(options.e)) {
+      if (!this.editable || this._isObjectMoved(options.e)) {
         return;
       }
 
-      if (this.__lastSelected) {
-        this.enterEditing();
+      if (this.__lastSelected && !this.__corner) {
+        this.enterEditing(options.e);
         this.initDelayedCursor(true);
       }
       this.selected = true;
@@ -157,29 +159,12 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
   },
 
   /**
-   * @private
-   * @param {Event} e Event object
-   * @return {Object} Coordinates of a pointer (x, y)
-   */
-  _getLocalRotatedPointer: function(e) {
-    var pointer = this.canvas.getPointer(e),
-
-        pClicked = new fabric.Point(pointer.x, pointer.y),
-        pLeftTop = new fabric.Point(this.left, this.top),
-
-        rotated = fabric.util.rotatePoint(
-          pClicked, pLeftTop, fabric.util.degreesToRadians(-this.angle));
-
-    return this.getLocalPointer(e, rotated);
-  },
-
-  /**
    * Returns index of a character corresponding to where an object was clicked
    * @param {Event} e Event object
    * @return {Number} Index of a character
    */
   getSelectionStartFromPointer: function(e) {
-    var mouseOffset = this._getLocalRotatedPointer(e),
+    var mouseOffset = this.getLocalPointer(e),
         prevWidth = 0,
         width = 0,
         height = 0,
@@ -188,7 +173,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
         line;
 
     for (var i = 0, len = this._textLines.length; i < len; i++) {
-      line = this._textLines[i].split('');
+      line = this._textLines[i];
       height += this._getHeightOfLine(this.ctx, i) * this.scaleY;
 
       var widthOfLine = this._getLineWidth(this.ctx, i),
@@ -196,17 +181,11 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
 
       width = lineLeftOffset * this.scaleX;
 
-      if (this.flipX) {
-        // when oject is horizontally flipped we reverse chars
-        this._textLines[i] = line.reverse().join('');
-      }
-
       for (var j = 0, jlen = line.length; j < jlen; j++) {
 
-        var _char = line[j];
         prevWidth = width;
 
-        width += this._getWidthOfChar(this.ctx, _char, i, this.flipX ? jlen - j : j) *
+        width += this._getWidthOfChar(this.ctx, line[j], i, this.flipX ? jlen - j : j) *
                  this.scaleX;
 
         if (height <= mouseOffset.y || width <= mouseOffset.x) {
@@ -219,8 +198,9 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
       }
 
       if (mouseOffset.y < height) {
+        //this happens just on end of lines.
         return this._getNewSelectionStartFromOffset(
-          mouseOffset, prevWidth, width, charIndex + i, jlen);
+          mouseOffset, prevWidth, width, charIndex + i - 1, jlen);
       }
     }
 

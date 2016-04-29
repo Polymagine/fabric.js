@@ -17,7 +17,7 @@
       IMG_HEIGHT  = 110;
 
   function _createImageElement() {
-    return fabric.isLikelyNode ? new (require('canvas').Image) : fabric.document.createElement('img');
+    return fabric.isLikelyNode ? new (require('canvas').Image)() : fabric.document.createElement('img');
   }
 
   function createImageObject(callback) {
@@ -153,12 +153,14 @@
     var emptyObjectJSON = '{"type":"object","originX":"left","originY":"top","left":0,"top":0,"width":0,"height":0,"fill":"rgb(0,0,0)",'+
                           '"stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,'+
                           '"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,'+
-                          '"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over"}';
+                          '"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over",'+
+                          '"transformMatrix":null,"skewX":0,"skewY":0}';
 
     var augmentedJSON = '{"type":"object","originX":"left","originY":"top","left":0,"top":0,"width":122,"height":0,"fill":"rgb(0,0,0)",'+
                         '"stroke":null,"strokeWidth":1,"strokeDashArray":[5,2],"strokeLineCap":"round","strokeLineJoin":"bevil","strokeMiterLimit":5,'+
                         '"scaleX":1.3,"scaleY":1,"angle":0,"flipX":false,"flipY":true,"opacity":0.88,'+
-                        '"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over"}';
+                        '"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over",'+
+                        '"transformMatrix":null,"skewX":0,"skewY":0}';
 
     var cObj = new fabric.Object();
     ok(typeof cObj.toJSON == 'function');
@@ -203,7 +205,10 @@
       'backgroundColor':          '',
       'clipTo':                   null,
       'fillRule':                 'nonzero',
-      'globalCompositeOperation': 'source-over'
+      'globalCompositeOperation': 'source-over',
+      'skewX':                      0,
+      'skewY':                      0,
+      'transformMatrix':          null
     };
 
     var augmentedObjectRepr = {
@@ -232,7 +237,10 @@
       'backgroundColor':          '',
       'clipTo':                   null,
       'fillRule':                 'nonzero',
-      'globalCompositeOperation': 'source-over'
+      'globalCompositeOperation': 'source-over',
+      'transformMatrix':          null,
+      'skewX':                      0,
+      'skewY':                      0
     };
 
     var cObj = new fabric.Object();
@@ -288,10 +296,12 @@
       strokeLineJoin: 'bevil',
       strokeMiterLimit: 5,
       flipX: true,
-      opacity: 0.13
+      opacity: 0.13,
+      transformMatrix: [3, 0, 3, 1, 0, 0]
     };
 
-    var cObj = new fabric.Object();
+    var cObj = new fabric.Object(),
+        toObjectObj;
     cObj.includeDefaultValues = false;
     deepEqual(emptyObjectRepr, cObj.toObject());
 
@@ -304,9 +314,15 @@
         .set('strokeDashArray', [5, 2])
         .set('strokeLineCap', 'round')
         .set('strokeLineJoin', 'bevil')
-        .set('strokeMiterLimit', 5);
-
-    deepEqual(augmentedObjectRepr, cObj.toObject());
+        .set('strokeMiterLimit', 5)
+        .set('transformMatrix', [3, 0, 3, 1, 0, 0]);
+    toObjectObj = cObj.toObject();
+    deepEqual(augmentedObjectRepr, toObjectObj);
+    notEqual(augmentedObjectRepr.transformMatrix, toObjectObj.transformMatrix);
+    deepEqual(augmentedObjectRepr.transformMatrix, toObjectObj.transformMatrix);
+    notEqual(augmentedObjectRepr.strokeDashArray, toObjectObj.strokeDashArray);
+    deepEqual(augmentedObjectRepr.strokeDashArray, toObjectObj.strokeDashArray);
+    
   });
 
   test('toDatalessObject', function() {
@@ -349,14 +365,14 @@
     cObj.set('height', 167).setCoords();
     boundingRect = cObj.getBoundingRect();
     equal(boundingRect.left, 0);
-    equal(boundingRect.top, 0);
+    equal(Math.abs(boundingRect.top).toFixed(13), 0);
     equal(boundingRect.width, 123);
     equal(boundingRect.height, 167);
 
     cObj.scale(2).setCoords();
     boundingRect = cObj.getBoundingRect();
     equal(boundingRect.left, 0);
-    equal(boundingRect.top, 0);
+    equal(Math.abs(boundingRect.top).toFixed(13), 0);
     equal(boundingRect.width, 246);
     equal(boundingRect.height, 334);
   });
@@ -368,45 +384,45 @@ test('getBoundingRectWithStroke', function() {
 
     cObj.setCoords();
     boundingRect = cObj.getBoundingRect();
-    equal(boundingRect.left.toFixed(2), -0.5);
-    equal(boundingRect.top.toFixed(2), -0.5);
+    equal(boundingRect.left.toFixed(2), 0);
+    equal(boundingRect.top.toFixed(2), 0);
     equal(boundingRect.width.toFixed(2), 1);
     equal(boundingRect.height.toFixed(2), 1);
 
     cObj.set('width', 123).setCoords();
     boundingRect = cObj.getBoundingRect();
-    equal(boundingRect.left.toFixed(2), -0.5);
-    equal(boundingRect.top.toFixed(2), -0.5);
+    equal(boundingRect.left.toFixed(2), 0);
+    equal(boundingRect.top.toFixed(2), 0);
     equal(boundingRect.width.toFixed(2), 124);
     equal(boundingRect.height.toFixed(2), 1);
 
     cObj.set('height', 167).setCoords();
     boundingRect = cObj.getBoundingRect();
-    equal(boundingRect.left.toFixed(2), -0.5);
-    equal(boundingRect.top.toFixed(2), -0.5);
+    equal(boundingRect.left.toFixed(2), 0);
+    equal(boundingRect.top.toFixed(2), 0);
     equal(boundingRect.width.toFixed(2), 124);
     equal(boundingRect.height.toFixed(2), 168);
 
     cObj.scale(2).setCoords();
     boundingRect = cObj.getBoundingRect();
-    equal(boundingRect.left.toFixed(2), -1);
-    equal(boundingRect.top.toFixed(2), -1);
+    equal(boundingRect.left.toFixed(2), 0);
+    equal(boundingRect.top.toFixed(2), 0);
     equal(boundingRect.width.toFixed(2), 248);
     equal(boundingRect.height.toFixed(2), 336);
   });
 
   test('getWidth', function() {
-    var cObj = new fabric.Object({ strokeWidth: 0 });
+    var cObj = new fabric.Object();
     ok(typeof cObj.getWidth == 'function');
-    equal(cObj.getWidth(), 0);
+    equal(cObj.getWidth(), 0 + cObj.strokeWidth);
     cObj.set('width', 123);
-    equal(cObj.getWidth(), 123);
+    equal(cObj.getWidth(), 123 + cObj.strokeWidth);
     cObj.set('scaleX', 2);
-    equal(cObj.getWidth(), 246);
+    equal(cObj.getWidth(), 246 + cObj.strokeWidth * 2);
   });
 
   test('getHeight', function() {
-    var cObj = new fabric.Object();
+    var cObj = new fabric.Object({strokeWidth: 0});
     ok(typeof cObj.getHeight == 'function');
     equal(cObj.getHeight(), 0);
     cObj.set('height', 123);
@@ -529,7 +545,6 @@ test('getBoundingRectWithStroke', function() {
     }
 
     var dummyContext = canvas.getContext('2d');
-  //  initElement
 
     ok(typeof cObj.drawBorders == 'function');
     equal(cObj.drawBorders(dummyContext), cObj, 'chainable');
@@ -575,7 +590,6 @@ test('getBoundingRectWithStroke', function() {
     }
     else {
       var image;
-      var _this = this;
 
       setTimeout(function() {
         ok(image);
@@ -590,15 +604,15 @@ test('getBoundingRectWithStroke', function() {
   });
 
   test('toDataURL', function() {
-    var data =
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQA'+
-      'AABkCAYAAABw4pVUAAAA+UlEQVR4nO3RoRHAQBDEsOu/6YR+B2s'+
-      'gIO4Z3919pMwDMCRtHoAhafMADEmbB2BI2jwAQ9LmARiSNg/AkLR5AI'+
-      'akzQMwJG0egCFp8wAMSZsHYEjaPABD0uYBGJI2D8CQtHkAhqTNAzAkbR'+
-      '6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPwJC0eQCGpM0DMCRtHoAhafMADEm'+
-      'bB2BI2jwAQ9LmARiSNg/AkLR5AIakzQMwJG0egCFp8wAMSZsHYEjaPABD0'+
-      'uYBGJI2D8CQtHkAhqTNAzAkbR6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPw'+
-      'JC0eQCGpM0DMCRtHsDjB5K06yueJFXJAAAAAElFTkSuQmCC';
+    // var data =
+    //   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQA'+
+    //   'AABkCAYAAABw4pVUAAAA+UlEQVR4nO3RoRHAQBDEsOu/6YR+B2s'+
+    //   'gIO4Z3919pMwDMCRtHoAhafMADEmbB2BI2jwAQ9LmARiSNg/AkLR5AI'+
+    //   'akzQMwJG0egCFp8wAMSZsHYEjaPABD0uYBGJI2D8CQtHkAhqTNAzAkbR'+
+    //   '6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPwJC0eQCGpM0DMCRtHoAhafMADEm'+
+    //   'bB2BI2jwAQ9LmARiSNg/AkLR5AIakzQMwJG0egCFp8wAMSZsHYEjaPABD0'+
+    //   'uYBGJI2D8CQtHkAhqTNAzAkbR6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPw'+
+    //   'JC0eQCGpM0DMCRtHsDjB5K06yueJFXJAAAAAElFTkSuQmCC';
 
     var cObj = new fabric.Rect({
       width: 100, height: 100, fill: 'red'
@@ -607,7 +621,7 @@ test('getBoundingRectWithStroke', function() {
     ok(typeof cObj.toDataURL == 'function');
 
     if (!fabric.Canvas.supports('toDataURL')) {
-      alert('toDataURL is not supported by this environment. Some of the tests can not be run.');
+      window.alert('toDataURL is not supported by this environment. Some of the tests can not be run.');
     }
     else {
       var dataURL = cObj.toDataURL();
@@ -615,7 +629,7 @@ test('getBoundingRectWithStroke', function() {
       equal(dataURL.substring(0, 21), 'data:image/png;base64');
 
       try {
-        var dataURL = cObj.toDataURL({ format: 'jpeg' });
+        dataURL = cObj.toDataURL({ format: 'jpeg' });
         equal(dataURL.substring(0, 22), 'data:image/jpeg;base64');
       }
       catch(err) {
@@ -625,15 +639,15 @@ test('getBoundingRectWithStroke', function() {
   });
 
 test('toDataURL & reference to canvas', function() {
-  var data =
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQA'+
-    'AABkCAYAAABw4pVUAAAA+UlEQVR4nO3RoRHAQBDEsOu/6YR+B2s'+
-    'gIO4Z3919pMwDMCRtHoAhafMADEmbB2BI2jwAQ9LmARiSNg/AkLR5AI'+
-    'akzQMwJG0egCFp8wAMSZsHYEjaPABD0uYBGJI2D8CQtHkAhqTNAzAkbR'+
-    '6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPwJC0eQCGpM0DMCRtHoAhafMADEm'+
-    'bB2BI2jwAQ9LmARiSNg/AkLR5AIakzQMwJG0egCFp8wAMSZsHYEjaPABD0'+
-    'uYBGJI2D8CQtHkAhqTNAzAkbR6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPw'+
-    'JC0eQCGpM0DMCRtHsDjB5K06yueJFXJAAAAAElFTkSuQmCC';
+  // var data =
+  //   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQA'+
+  //   'AABkCAYAAABw4pVUAAAA+UlEQVR4nO3RoRHAQBDEsOu/6YR+B2s'+
+  //   'gIO4Z3919pMwDMCRtHoAhafMADEmbB2BI2jwAQ9LmARiSNg/AkLR5AI'+
+  //   'akzQMwJG0egCFp8wAMSZsHYEjaPABD0uYBGJI2D8CQtHkAhqTNAzAkbR'+
+  //   '6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPwJC0eQCGpM0DMCRtHoAhafMADEm'+
+  //   'bB2BI2jwAQ9LmARiSNg/AkLR5AIakzQMwJG0egCFp8wAMSZsHYEjaPABD0'+
+  //   'uYBGJI2D8CQtHkAhqTNAzAkbR6AIWnzAAxJmwdgSNo8AEPS5gEYkjYPw'+
+  //   'JC0eQCGpM0DMCRtHsDjB5K06yueJFXJAAAAAElFTkSuQmCC';
 
   var cObj = new fabric.Rect({
     width: 100, height: 100, fill: 'red'
@@ -641,7 +655,7 @@ test('toDataURL & reference to canvas', function() {
   canvas.add(cObj);
 
   if (!fabric.Canvas.supports('toDataURL')) {
-    alert('toDataURL is not supported by this environment. Some of the tests can not be run.');
+    window.alert('toDataURL is not supported by this environment. Some of the tests can not be run.');
   }
   else {
     var objCanvas = cObj.canvas;
@@ -952,7 +966,7 @@ test('toDataURL & reference to canvas', function() {
 
   test('center', function() {
     var object = new fabric.Object();
-
+    object.strokeWidth = 0;
     ok(typeof object.center == 'function');
 
     canvas.add(object);
@@ -964,7 +978,7 @@ test('toDataURL & reference to canvas', function() {
 
   test('centerH', function() {
     var object = new fabric.Object();
-
+    object.strokeWidth = 0;
     ok(typeof object.centerH == 'function');
 
     canvas.add(object);
@@ -975,7 +989,7 @@ test('toDataURL & reference to canvas', function() {
 
   test('centerV', function() {
     var object = new fabric.Object();
-
+    object.strokeWidth = 0;
     ok(typeof object.centerV == 'function');
 
     canvas.add(object);
@@ -1064,6 +1078,44 @@ test('toDataURL & reference to canvas', function() {
     equal(fill.colorStops[1].color, 'rgb(0,128,0)');
   });
 
+  test('setGradient with gradientTransform', function() {
+    var object = new fabric.Object();
+
+    ok(typeof object.setGradient == 'function');
+
+    equal(object.setGradient('fill', {
+      x1: 0,
+      y1: 0,
+      x2: 100,
+      y2: 100,
+      gradientTransform: [1, 0, 0, 4, 5, 5],
+      colorStops: {
+        '0': 'rgb(255,0,0)',
+        '1': 'rgb(0,128,0)'
+      }
+    }), object, 'should be chainable');
+
+    ok(typeof object.toObject().fill == 'object');
+    ok(object.fill instanceof fabric.Gradient);
+
+    var fill = object.fill;
+
+    equal(fill.type, 'linear');
+
+    equal(fill.coords.x1, 0);
+    equal(fill.coords.y1, 0);
+
+    equal(fill.coords.x2, 100);
+    equal(fill.coords.y2, 100);
+
+    deepEqual(fill.gradientTransform, [1, 0, 0, 4, 5, 5]);
+
+    equal(fill.colorStops[0].offset, 0);
+    equal(fill.colorStops[1].offset, 1);
+    equal(fill.colorStops[0].color, 'rgb(255,0,0)');
+    equal(fill.colorStops[1].color, 'rgb(0,128,0)');
+  });
+
   asyncTest('setPatternFill', function() {
     var object = new fabric.Object();
 
@@ -1113,11 +1165,11 @@ test('toDataURL & reference to canvas', function() {
     equal(object.shadow.blur, 10);
     equal(object.shadow.offsetX, 5);
     equal(object.shadow.offsetY, 15);
-    
+
     equal(object.setShadow(null), object, 'should be chainable');
     ok(!(object.shadow instanceof fabric.Shadow));
     equal(object.shadow, null);
-    
+
   });
 
   test('set shadow', function() {

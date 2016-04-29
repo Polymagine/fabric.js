@@ -39,7 +39,7 @@
   });
 
   test('setRadius', function() {
-    var circle = new fabric.Circle({ radius: 10 });
+    var circle = new fabric.Circle({radius: 10, strokeWidth: 0});
 
     ok(typeof circle.setRadius == 'function');
 
@@ -49,7 +49,7 @@
     equal(circle.getWidth(), 20);
     equal(circle.getHeight(), 20);
 
-    circle.setRadius(20);
+    equal(circle, circle.setRadius(20));
 
     equal(circle.getRadiusX(), 20);
     equal(circle.getRadiusY(), 20);
@@ -59,7 +59,7 @@
   });
 
   test('set radius', function() {
-    var circle = new fabric.Circle();
+    var circle = new fabric.Circle({strokeWidth: 0});
 
     circle.set('radius', 20);
 
@@ -107,7 +107,10 @@
       'globalCompositeOperation': 'source-over',
       'radius':                   0,
       'startAngle':               0,
-      'endAngle':                 2 * Math.PI
+      'endAngle':                 2 * Math.PI,
+      'skewX':                    0,
+      'skewY':                    0,
+      'transformMatrix':          null
     };
     ok(typeof circle.toObject == 'function');
     deepEqual(circle.toObject(), defaultProperties);
@@ -166,7 +169,7 @@
     equal(oCircle.get('strokeLineJoin'), strokeLineJoin);
     equal(oCircle.get('strokeMiterLimit'), strokeMiterLimit);
 
-    elFaultyCircle = fabric.document.createElement('circle');
+    var elFaultyCircle = fabric.document.createElement('circle');
     elFaultyCircle.setAttribute('r', '-10');
 
     var error;
@@ -217,7 +220,7 @@
   });
 
   test('cloning and radius, width, height', function() {
-    var circle = new fabric.Circle({ radius: 10 });
+    var circle = new fabric.Circle({ radius: 10, strokeWidth: 0});
     circle.scale(2);
 
     var clone = circle.clone();

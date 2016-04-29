@@ -2,6 +2,8 @@
 
   var sqrt = Math.sqrt,
       atan2 = Math.atan2,
+      pow = Math.pow,
+      abs = Math.abs,
       PiBy180 = Math.PI / 180;
 
   /**
@@ -70,15 +72,28 @@
      * @return {fabric.Point} The new rotated point
      */
     rotatePoint: function(point, origin, radians) {
-      var sin = Math.sin(radians),
-          cos = Math.cos(radians);
-
       point.subtractEquals(origin);
+      var v = fabric.util.rotateVector(point, radians);
+      return new fabric.Point(v.x, v.y).addEquals(origin);
+    },
 
-      var rx = point.x * cos - point.y * sin,
-          ry = point.x * sin + point.y * cos;
-
-      return new fabric.Point(rx, ry).addEquals(origin);
+    /**
+     * Rotates `vector` with `radians`
+     * @static
+     * @memberOf fabric.util
+     * @param {Object} vector The vector to rotate (x and y)
+     * @param {Number} radians The radians of the angle for the rotation
+     * @return {Object} The new rotated point
+     */
+    rotateVector: function(vector, radians) {
+      var sin = Math.sin(radians),
+          cos = Math.cos(radians),
+          rx = vector.x * cos - vector.y * sin,
+          ry = vector.x * sin + vector.y * cos;
+      return {
+        x: rx,
+        y: ry
+      };
     },
 
     /**
@@ -104,6 +119,29 @@
     },
 
     /**
+     * Returns coordinates of points's bounding rectangle (left, top, width, height)
+     * @param {Array} points 4 points array
+     * @return {Object} Object with left, top, width, height properties
+     */
+    makeBoundingBoxFromPoints: function(points) {
+      var xPoints = [points[0].x, points[1].x, points[2].x, points[3].x],
+          minX = fabric.util.array.min(xPoints),
+          maxX = fabric.util.array.max(xPoints),
+          width = Math.abs(minX - maxX),
+          yPoints = [points[0].y, points[1].y, points[2].y, points[3].y],
+          minY = fabric.util.array.min(yPoints),
+          maxY = fabric.util.array.max(yPoints),
+          height = Math.abs(minY - maxY);
+
+      return {
+        left: minX,
+        top: minY,
+        width: width,
+        height: height
+      };
+    },
+
+    /**
      * Invert transformation t
      * @static
      * @memberOf fabric.util
@@ -111,10 +149,9 @@
      * @return {Array} The inverted transform
      */
     invertTransform: function(t) {
-      var r = t.slice(),
-          a = 1 / (t[0] * t[3] - t[1] * t[2]);
-      r = [a * t[3], -a * t[1], -a * t[2], a * t[0], 0, 0];
-      var o = fabric.util.transformPoint({ x: t[4], y: t[5] }, r);
+      var a = 1 / (t[0] * t[3] - t[1] * t[2]),
+          r = [a * t[3], -a * t[1], -a * t[2], a * t[0]],
+          o = fabric.util.transformPoint({ x: t[4], y: t[5] }, r, true);
       r[4] = -o.x;
       r[5] = -o.y;
       return r;
@@ -179,12 +216,12 @@
     },
 
     /**
-      * Returns klass "Class" object of given namespace
-      * @memberOf fabric.util
-      * @param {String} type Type of object (eg. 'circle')
-      * @param {String} namespace Namespace to get klass "Class" object from
-      * @return {Object} klass "Class"
-      */
+     * Returns klass "Class" object of given namespace
+     * @memberOf fabric.util
+     * @param {String} type Type of object (eg. 'circle')
+     * @param {String} namespace Namespace to get klass "Class" object from
+     * @return {Object} klass "Class"
+     */
     getKlass: function(type, namespace) {
       // capitalize first letter only
       type = fabric.util.string.camelize(type.charAt(0).toUpperCase() + type.slice(1));
@@ -246,7 +283,7 @@
       // https://github.com/kangax/fabric.js/commit/d0abb90f1cd5c5ef9d2a94d3fb21a22330da3e0a#commitcomment-4513767
       // see https://code.google.com/p/chromium/issues/detail?id=315152
       //     https://bugzilla.mozilla.org/show_bug.cgi?id=935069
-      if (url.indexOf('data') !== 0 && typeof crossOrigin !== 'undefined') {
+      if (url.indexOf('data') !== 0 && crossOrigin) {
         img.crossOrigin = crossOrigin;
       }
 
@@ -461,18 +498,59 @@
      * @memberOf fabric.util
      * @param  {Array} a First transformMatrix
      * @param  {Array} b Second transformMatrix
+     * @param  {Boolean} is2x2 flag to multiply matrices as 2x2 matrices
      * @return {Array} The product of the two transform matrices
      */
-    multiplyTransformMatrices: function(a, b) {
+    multiplyTransformMatrices: function(a, b, is2x2) {
       // Matrix multiply a * b
       return [
         a[0] * b[0] + a[2] * b[1],
         a[1] * b[0] + a[3] * b[1],
         a[0] * b[2] + a[2] * b[3],
         a[1] * b[2] + a[3] * b[3],
-        a[0] * b[4] + a[2] * b[5] + a[4],
-        a[1] * b[4] + a[3] * b[5] + a[5]
+        is2x2 ? 0 : a[0] * b[4] + a[2] * b[5] + a[4],
+        is2x2 ? 0 : a[1] * b[4] + a[3] * b[5] + a[5]
       ];
+    },
+
+    /**
+     * Decomposes standard 2x2 matrix into transform componentes
+     * @static
+     * @memberOf fabric.util
+     * @param  {Array} a transformMatrix
+     * @return {Object} Components of transform
+     */
+    qrDecompose: function(a) {
+      var angle = atan2(a[1], a[0]),
+          denom = pow(a[0], 2) + pow(a[1], 2),
+          scaleX = sqrt(denom),
+          scaleY = (a[0] * a[3] - a[2] * a [1]) / scaleX,
+          skewX = atan2(a[0] * a[2] + a[1] * a [3], denom);
+      return {
+        angle: angle  / PiBy180,
+        scaleX: scaleX,
+        scaleY: scaleY,
+        skewX: skewX / PiBy180,
+        skewY: 0,
+        translateX: a[4],
+        translateY: a[5]
+      };
+    },
+
+    customTransformMatrix: function(scaleX, scaleY, skewX) {
+      var skewMatrixX = [1, 0, abs(Math.tan(skewX * PiBy180)), 1],
+          scaleMatrix = [abs(scaleX), 0, 0, abs(scaleY)];
+      return fabric.util.multiplyTransformMatrices(scaleMatrix, skewMatrixX, true);
+    },
+
+    resetObjectTransform: function (target) {
+      target.scaleX = 1;
+      target.scaleY = 1;
+      target.skewX = 0;
+      target.skewY = 0;
+      target.flipX = false;
+      target.flipY = false;
+      target.setAngle(0);
     },
 
     /**
@@ -526,6 +604,35 @@
       imageData = null;
 
       return _isTransparent;
+    },
+
+    /**
+     * Parse preserveAspectRatio attribute from element
+     * @param {string} attribute to be parsed
+     * @return {Object} an object containing align and meetOrSlice attribute
+     */
+    parsePreserveAspectRatioAttribute: function(attribute) {
+      var meetOrSlice = 'meet', alignX = 'Mid', alignY = 'Mid',
+          aspectRatioAttrs = attribute.split(' '), align;
+
+      if (aspectRatioAttrs && aspectRatioAttrs.length) {
+        meetOrSlice = aspectRatioAttrs.pop();
+        if (meetOrSlice !== 'meet' && meetOrSlice !== 'slice') {
+          align = meetOrSlice;
+          meetOrSlice = 'meet';
+        }
+        else if (aspectRatioAttrs.length) {
+          align = aspectRatioAttrs.pop();
+        }
+      }
+      //divide align in alignX and alignY
+      alignX = align !== 'none' ? align.slice(1, 4) : 'none';
+      alignY = align !== 'none' ? align.slice(5, 8) : 'none';
+      return {
+        meetOrSlice: meetOrSlice,
+        alignX: alignX,
+        alignY: alignY
+      };
     }
   };
 

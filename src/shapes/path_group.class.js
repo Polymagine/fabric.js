@@ -16,7 +16,7 @@
    * Path group class
    * @class fabric.PathGroup
    * @extends fabric.Path
-   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1/#path_and_pathgroup}
+   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1#path_and_pathgroup}
    * @see {@link fabric.PathGroup#initialize} for constructor definition
    */
   fabric.PathGroup = fabric.util.createClass(fabric.Path, /** @lends fabric.PathGroup.prototype */ {
@@ -67,7 +67,7 @@
      */
     parseDimensionsFromPaths: function(options) {
       var points, p, xC = [ ], yC = [ ], path, height, width,
-          m = this.transformMatrix;
+          m;
       for (var j = this.paths.length; j--;) {
         path = this.paths[j];
         height = path.height + path.strokeWidth;
@@ -78,6 +78,7 @@
           { x: path.left, y: path.top + height },
           { x: path.left + width, y: path.top + height }
         ];
+        m = this.paths[j].transformMatrix;
         for (var i = 0; i < points.length; i++) {
           p = points[i];
           if (m) {
@@ -115,7 +116,6 @@
         this.paths[i].render(ctx, true);
       }
       this.clipTo && ctx.restore();
-      this._removeShadow(ctx);
       ctx.restore();
     },
 
@@ -175,17 +175,16 @@
       var objects = this.getObjects(),
           p = this.getPointByOrigin('left', 'top'),
           translatePart = 'translate(' + p.x + ' ' + p.y + ')',
-          markup = [
-            //jscs:disable validateIndentation
-            '<g ',
-              'style="', this.getSvgStyles(), '" ',
-              'transform="', this.getSvgTransformMatrix(), translatePart, this.getSvgTransform(), '" ',
-            '>\n'
-            //jscs:enable validateIndentation
-          ];
+          markup = this._createBaseSVGMarkup();
+      markup.push(
+        '<g ',
+        'style="', this.getSvgStyles(), '" ',
+        'transform="', this.getSvgTransformMatrix(), translatePart, this.getSvgTransform(), '" ',
+        '>\n'
+      );
 
       for (var i = 0, len = objects.length; i < len; i++) {
-        markup.push(objects[i].toSVG(reviver));
+        markup.push('\t', objects[i].toSVG(reviver));
       }
       markup.push('</g>\n');
 
@@ -207,9 +206,14 @@
      * @return {Boolean} true if all paths are of the same color (`fill`)
      */
     isSameColor: function() {
-      var firstPathFill = (this.getObjects()[0].get('fill') || '').toLowerCase();
+      var firstPathFill = this.getObjects()[0].get('fill') || '';
+      if (typeof firstPathFill !== 'string') {
+        return false;
+      }
+      firstPathFill = firstPathFill.toLowerCase();
       return this.getObjects().every(function(path) {
-        return (path.get('fill') || '').toLowerCase() === firstPathFill;
+        var pathFill = path.get('fill') || '';
+        return typeof pathFill === 'string' && (pathFill).toLowerCase() === firstPathFill;
       });
     },
 

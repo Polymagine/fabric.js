@@ -1,8 +1,8 @@
 /**
  * Pattern class
  * @class fabric.Pattern
- * @see {@link http://fabricjs.com/patterns/|Pattern demo}
- * @see {@link http://fabricjs.com/dynamic-patterns/|DynamicPattern demo}
+ * @see {@link http://fabricjs.com/patterns|Pattern demo}
+ * @see {@link http://fabricjs.com/dynamic-patterns|DynamicPattern demo}
  * @see {@link fabric.Pattern#initialize} for constructor definition
  */
 fabric.Pattern = fabric.util.createClass(/** @lends fabric.Pattern.prototype */ {
@@ -84,6 +84,10 @@ fabric.Pattern = fabric.util.createClass(/** @lends fabric.Pattern.prototype */ 
     // <img> element
     else if (typeof this.source.src === 'string') {
       source = this.source.src;
+    }
+    // <canvas> element
+    else if (typeof this.source === 'object' && this.source.toDataURL) {
+      source = this.source.toDataURL();
     }
 
     return {

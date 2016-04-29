@@ -59,14 +59,14 @@
 
     /**
      * Index where text selection starts (or where cursor is when there is no selection)
-     * @type Nubmer
+     * @type Number
      * @default
      */
     selectionStart: 0,
 
     /**
      * Index where text selection ends
-     * @type Nubmer
+     * @type Number
      * @default
      */
     selectionEnd: 0,
@@ -144,13 +144,6 @@
 
     /**
      * @private
-     * @type Boolean
-     * @default
-     */
-    _skipFillStrokeCheck: false,
-
-    /**
-     * @private
      */
     _reSpace: /\s|\n/,
 
@@ -175,6 +168,11 @@
     _charWidthsCache: { },
 
     /**
+     * @private
+     */
+    __widthOfSpace: [ ],
+
+    /**
      * Constructor
      * @param {String} text Text string
      * @param {Object} [options] Options object
@@ -191,7 +189,6 @@
      */
     _clearCache: function() {
       this.callSuper('_clearCache');
-      this.__maxFontHeights = [ ];
       this.__widthOfSpace = [ ];
     },
 
@@ -259,12 +256,10 @@
         return styles;
       }
 
-      var loc = this.get2DCursorLocation(startIndex);
-      if (this.styles[loc.lineIndex]) {
-        return this.styles[loc.lineIndex][loc.charIndex] || { };
-      }
+      var loc = this.get2DCursorLocation(startIndex),
+          style = this._getStyleDeclaration(loc.lineIndex, loc.charIndex);
 
-      return { };
+      return style || {};
     },
 
     /**
@@ -283,7 +278,7 @@
         }
       }
       /* not included in _extendStyles to avoid clearing cache more than once */
-      this._clearCache();
+      this._forceClearCache = true;
       return this;
     },
 
@@ -293,19 +288,21 @@
     _extendStyles: function(index, styles) {
       var loc = this.get2DCursorLocation(index);
 
-      if (!this.styles[loc.lineIndex]) {
-        this.styles[loc.lineIndex] = { };
+      if (!this._getLineStyle(loc.lineIndex)) {
+        this._setLineStyle(loc.lineIndex, {});
       }
-      if (!this.styles[loc.lineIndex][loc.charIndex]) {
-        this.styles[loc.lineIndex][loc.charIndex] = { };
+
+      if (!this._getStyleDeclaration(loc.lineIndex, loc.charIndex)) {
+        this._setStyleDeclaration(loc.lineIndex, loc.charIndex, {});
       }
-      fabric.util.object.extend(this.styles[loc.lineIndex][loc.charIndex], styles);
+
+      fabric.util.object.extend(this._getStyleDeclaration(loc.lineIndex, loc.charIndex), styles);
     },
 
     /**
-    * @private
-    * @param {CanvasRenderingContext2D} ctx Context to render on
-    */
+     * @private
+     * @param {CanvasRenderingContext2D} ctx Context to render on
+     */
     _render: function(ctx) {
       this.callSuper('_render', ctx);
       this.ctx = ctx;
@@ -328,6 +325,7 @@
         ctx.save();
         ctx.transform.apply(ctx, this.canvas.viewportTransform);
         this.transform(ctx);
+        this.transformMatrix && ctx.transform.apply(ctx, this.transformMatrix);
       }
       else {
         ctx = this.ctx;
@@ -354,12 +352,19 @@
       if (typeof selectionStart === 'undefined') {
         selectionStart = this.selectionStart;
       }
-      var textBeforeCursor = this.text.slice(0, selectionStart),
-          linesBeforeCursor = textBeforeCursor.split(this._reNewline);
-
+      var len = this._textLines.length;
+      for (var i = 0; i < len; i++) {
+        if (selectionStart <= this._textLines[i].length) {
+          return {
+            lineIndex: i,
+            charIndex: selectionStart
+          };
+        }
+        selectionStart -= this._textLines[i].length + 1;
+      }
       return {
-        lineIndex: linesBeforeCursor.length - 1,
-        charIndex: linesBeforeCursor[linesBeforeCursor.length - 1].length
+        lineIndex: i - 1,
+        charIndex: this._textLines[i - 1].length < selectionStart ? this._textLines[i - 1].length : selectionStart
       };
     },
 
@@ -367,10 +372,10 @@
      * Returns complete style of char at the current cursor
      * @param {Number} lineIndex Line index
      * @param {Number} charIndex Char index
-    * @return {Object} Character style
+     * @return {Object} Character style
      */
     getCurrentCharStyle: function(lineIndex, charIndex) {
-      var style = this.styles[lineIndex] && this.styles[lineIndex][charIndex === 0 ? 0 : (charIndex - 1)];
+      var style = this._getStyleDeclaration(lineIndex, charIndex === 0 ? 0 : charIndex - 1);
 
       return {
         fontSize: style && style.fontSize || this.fontSize,
@@ -392,10 +397,8 @@
      * @return {Number} Character font size
      */
     getCurrentCharFontSize: function(lineIndex, charIndex) {
-      return (
-        this.styles[lineIndex] &&
-        this.styles[lineIndex][charIndex === 0 ? 0 : (charIndex - 1)] &&
-        this.styles[lineIndex][charIndex === 0 ? 0 : (charIndex - 1)].fontSize) || this.fontSize;
+      var style = this._getStyleDeclaration(lineIndex, charIndex === 0 ? 0 : charIndex - 1);
+      return style && style.fontSize ? style.fontSize : this.fontSize;
     },
 
     /**
@@ -405,10 +408,8 @@
      * @return {String} Character color (fill)
      */
     getCurrentCharColor: function(lineIndex, charIndex) {
-      return (
-        this.styles[lineIndex] &&
-        this.styles[lineIndex][charIndex === 0 ? 0 : (charIndex - 1)] &&
-        this.styles[lineIndex][charIndex === 0 ? 0 : (charIndex - 1)].fill) || this.cursorColor;
+      var style = this._getStyleDeclaration(lineIndex, charIndex === 0 ? 0 : charIndex - 1);
+      return style && style.fill ? style.fill : this.cursorColor;
     },
 
     /**
@@ -461,7 +462,7 @@
           charIndex++;
         }
 
-        lineLeftOffset = this._getCachedLineOffset(lineIndex);
+        lineLeftOffset = this._getLineLeftOffset(this._getLineWidth(this.ctx, lineIndex));
       }
       if (typeOfBoundaries === 'cursor') {
         topOffset += (1 - this._fontSizeFraction) * this._getHeightOfLine(this.ctx, lineIndex) / this.lineHeight
@@ -476,16 +477,6 @@
     },
 
     /**
-     * @private
-     */
-    _getCachedLineOffset: function(lineIndex) {
-      var widthOfLine = this._getLineWidth(this.ctx, lineIndex);
-
-      return this.__lineOffsets[lineIndex] ||
-        (this.__lineOffsets[lineIndex] = this._getLineLeftOffset(widthOfLine));
-    },
-
-    /**
      * Renders cursor
      * @param {Object} boundaries
      * @param {CanvasRenderingContext2D} ctx transformed context to draw on
@@ -497,7 +488,7 @@
           charIndex = cursorLocation.charIndex,
           charHeight = this.getCurrentCharFontSize(lineIndex, charIndex),
           leftOffset = (lineIndex === 0 && charIndex === 0)
-                    ? this._getCachedLineOffset(lineIndex)
+                    ? this._getLineLeftOffset(this._getLineWidth(ctx, lineIndex))
                     : boundaries.leftOffset;
 
       ctx.fillStyle = this.getCurrentCharColor(lineIndex, charIndex);
@@ -527,7 +518,7 @@
           endLine = end.lineIndex;
 
       for (var i = startLine; i <= endLine; i++) {
-        var lineOffset = this._getCachedLineOffset(i) || 0,
+        var lineOffset = this._getLineLeftOffset(this._getLineWidth(ctx, i)) || 0,
             lineHeight = this._getHeightOfLine(this.ctx, i),
             boxWidth = 0, line = this._textLines[i];
 
@@ -565,12 +556,13 @@
      * @param {String} method
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
-    _renderChars: function(method, ctx, line, left, top, lineIndex) {
+    _renderChars: function(method, ctx, line, left, top, lineIndex, charOffset) {
 
       if (this.isEmptyStyles()) {
         return this._renderCharsFast(method, ctx, line, left, top);
       }
 
+      charOffset = charOffset || 0;
       this.skipTextAlign = true;
 
       // set proper box offset
@@ -582,27 +574,26 @@
 
       // set proper line offset
       var lineHeight = this._getHeightOfLine(ctx, lineIndex),
-          lineLeftOffset = this._getCachedLineOffset(lineIndex),
-          chars = line.split(''),
+          lineLeftOffset = this._getLineLeftOffset(this._getLineWidth(ctx, lineIndex)),
           prevStyle,
+          thisStyle,
           charsToRender = '';
 
       left += lineLeftOffset || 0;
 
       ctx.save();
       top -= lineHeight / this.lineHeight * this._fontSizeFraction;
-      for (var i = 0, len = chars.length; i <= len; i++) {
+      for (var i = charOffset, len = line.length + charOffset; i <= len; i++) {
         prevStyle = prevStyle || this.getCurrentCharStyle(lineIndex, i);
-        var thisStyle = this.getCurrentCharStyle(lineIndex, i + 1);
+        thisStyle = this.getCurrentCharStyle(lineIndex, i + 1);
 
         if (this._hasStyleChanged(prevStyle, thisStyle) || i === len) {
           this._renderChar(method, ctx, lineIndex, i - 1, charsToRender, left, top, lineHeight);
           charsToRender = '';
           prevStyle = thisStyle;
         }
-        charsToRender += chars[i];
+        charsToRender += line[i - charOffset];
       }
-
       ctx.restore();
     },
 
@@ -637,42 +628,41 @@
      * @param {Number} lineHeight Height of the line
      */
     _renderChar: function(method, ctx, lineIndex, i, _char, left, top, lineHeight) {
-      var decl, charWidth, charHeight,
-          offset = this._fontSizeFraction * lineHeight / this.lineHeight;
+      var charWidth, charHeight, shouldFill, shouldStroke,
+          decl = this._getStyleDeclaration(lineIndex, i),
+          offset, textDecoration;
 
-      if (this.styles && this.styles[lineIndex] && (decl = this.styles[lineIndex][i])) {
-
-        var shouldStroke = decl.stroke || this.stroke,
-            shouldFill = decl.fill || this.fill;
-
-        ctx.save();
-        charWidth = this._applyCharStylesGetWidth(ctx, _char, lineIndex, i, decl);
+      if (decl) {
         charHeight = this._getHeightOfChar(ctx, _char, lineIndex, i);
-
-        if (shouldFill) {
-          ctx.fillText(_char, left, top);
-        }
-        if (shouldStroke) {
-          ctx.strokeText(_char, left, top);
-        }
-
-        this._renderCharDecoration(ctx, decl, left, top, offset, charWidth, charHeight);
-        ctx.restore();
-
-        ctx.translate(charWidth, 0);
+        shouldStroke = decl.stroke;
+        shouldFill = decl.fill;
+        textDecoration = decl.textDecoration;
       }
       else {
-        if (method === 'strokeText' && this.stroke) {
-          ctx[method](_char, left, top);
-        }
-        if (method === 'fillText' && this.fill) {
-          ctx[method](_char, left, top);
-        }
-        charWidth = this._applyCharStylesGetWidth(ctx, _char, lineIndex, i);
-        this._renderCharDecoration(ctx, null, left, top, offset, charWidth, this.fontSize);
-
-        ctx.translate(ctx.measureText(_char).width, 0);
+        charHeight = this.fontSize;
       }
+
+      shouldStroke = (shouldStroke || this.stroke) && method === 'strokeText';
+      shouldFill = (shouldFill || this.fill) && method === 'fillText';
+
+      decl && ctx.save();
+
+      charWidth = this._applyCharStylesGetWidth(ctx, _char, lineIndex, i, decl || {});
+      textDecoration = textDecoration || this.textDecoration;
+
+      if (decl && decl.textBackgroundColor) {
+        this._removeShadow(ctx);
+      }
+      shouldFill && ctx.fillText(_char, left, top);
+      shouldStroke && ctx.strokeText(_char, left, top);
+
+      if (textDecoration || textDecoration !== '') {
+        offset = this._fontSizeFraction * lineHeight / this.lineHeight;
+        this._renderCharDecoration(ctx, textDecoration, left, top, offset, charWidth, charHeight);
+      }
+
+      decl && ctx.restore();
+      ctx.translate(charWidth, 0);
     },
 
     /**
@@ -697,39 +687,25 @@
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
-    _renderCharDecoration: function(ctx, styleDeclaration, left, top, offset, charWidth, charHeight) {
-
-      var textDecoration = styleDeclaration
-            ? (styleDeclaration.textDecoration || this.textDecoration)
-            : this.textDecoration;
+    _renderCharDecoration: function(ctx, textDecoration, left, top, offset, charWidth, charHeight) {
 
       if (!textDecoration) {
         return;
       }
 
-      if (textDecoration.indexOf('underline') > -1) {
-        ctx.fillRect(
-          left,
-          top + charHeight / 10,
-          charWidth ,
-          charHeight / 15
-        );
-      }
-      if (textDecoration.indexOf('line-through') > -1) {
-        ctx.fillRect(
-          left,
-          top - charHeight * (this._fontSizeFraction + this._fontSizeMult - 1) + charHeight / 15,
-          charWidth,
-          charHeight / 15
-        );
-      }
-      if (textDecoration.indexOf('overline') > -1) {
-        ctx.fillRect(
-          left,
-          top - (this._fontSizeMult - this._fontSizeFraction) * charHeight,
-          charWidth,
-          charHeight / 15
-        );
+      var decorationWeight = charHeight / 15,
+          positions = {
+            underline: top + charHeight / 10,
+            'line-through': top - charHeight * (this._fontSizeFraction + this._fontSizeMult - 1) + decorationWeight,
+            overline: top - (this._fontSizeMult - this._fontSizeFraction) * charHeight
+          },
+          decorations = ['underline', 'line-through', 'overline'], i, decoration;
+
+      for (i = 0; i < decorations.length; i++) {
+        decoration = decorations[i];
+        if (textDecoration.indexOf(decoration) > -1) {
+          ctx.fillRect(left, positions[decoration], charWidth , decorationWeight);
+        }
       }
     },
 
@@ -763,59 +739,44 @@
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
     _renderTextLinesBackground: function(ctx) {
-      if (!this.textBackgroundColor && !this.styles) {
-        return;
-      }
+      this.callSuper('_renderTextLinesBackground', ctx);
 
-      ctx.save();
-
-      if (this.textBackgroundColor) {
-        ctx.fillStyle = this.textBackgroundColor;
-      }
-
-      var lineHeights = 0;
+      var lineTopOffset = 0, heightOfLine,
+          lineWidth, lineLeftOffset,
+          leftOffset = this._getLeftOffset(),
+          topOffset = this._getTopOffset(),
+          line, _char, style;
 
       for (var i = 0, len = this._textLines.length; i < len; i++) {
+        heightOfLine = this._getHeightOfLine(ctx, i);
+        line = this._textLines[i];
 
-        var heightOfLine = this._getHeightOfLine(ctx, i);
-        if (this._textLines[i] === '') {
-          lineHeights += heightOfLine;
+        if (line === '' || !this.styles || !this._getLineStyle(i)) {
+          lineTopOffset += heightOfLine;
           continue;
         }
 
-        var lineWidth = this._getLineWidth(ctx, i),
-            lineLeftOffset = this._getCachedLineOffset(i);
+        lineWidth = this._getLineWidth(ctx, i);
+        lineLeftOffset = this._getLineLeftOffset(lineWidth);
 
-        if (this.textBackgroundColor) {
-          ctx.fillStyle = this.textBackgroundColor;
+        for (var j = 0, jlen = line.length; j < jlen; j++) {
+          style = this._getStyleDeclaration(i, j);
+          if (!style || !style.textBackgroundColor) {
+            continue;
+          }
+          _char = line[j];
+
+          ctx.fillStyle = style.textBackgroundColor;
 
           ctx.fillRect(
-            this._getLeftOffset() + lineLeftOffset,
-            this._getTopOffset() + lineHeights,
-            lineWidth,
+            leftOffset + lineLeftOffset + this._getWidthOfCharsAt(ctx, i, j),
+            topOffset + lineTopOffset,
+            this._getWidthOfChar(ctx, _char, i, j) + 1,
             heightOfLine / this.lineHeight
           );
         }
-        if (this.styles[i]) {
-          for (var j = 0, jlen = this._textLines[i].length; j < jlen; j++) {
-            if (this.styles[i] && this.styles[i][j] && this.styles[i][j].textBackgroundColor) {
-
-              var _char = this._textLines[i][j];
-
-              ctx.fillStyle = this.styles[i][j].textBackgroundColor;
-
-              ctx.fillRect(
-                this._getLeftOffset() + lineLeftOffset + this._getWidthOfCharsAt(ctx, i, j),
-                this._getTopOffset() + lineHeights,
-                this._getWidthOfChar(ctx, _char, i, j) + 1,
-                heightOfLine / this.lineHeight
-              );
-            }
-          }
-        }
-        lineHeights += heightOfLine;
+        lineTopOffset += heightOfLine;
       }
-      ctx.restore();
     },
 
     /**
@@ -839,24 +800,16 @@
      * @param {Object} [decl]
      */
     _applyCharStylesGetWidth: function(ctx, _char, lineIndex, charIndex, decl) {
-      var styleDeclaration = decl ||
-                            (this.styles[lineIndex] &&
-                             this.styles[lineIndex][charIndex]);
-
-      if (styleDeclaration) {
-        // cloning so that original style object is not polluted with following font declarations
-        styleDeclaration = clone(styleDeclaration);
-      }
-      else {
-        styleDeclaration = { };
-      }
+      var charDecl = this._getStyleDeclaration(lineIndex, charIndex),
+          styleDeclaration = (decl && clone(decl)) || clone(charDecl), width;
 
       this._applyFontStyles(styleDeclaration);
 
       var cacheProp = this._getCacheProp(_char, styleDeclaration);
 
-      // short-circuit if no styles
-      if (this.isEmptyStyles() && this._charWidthsCache[cacheProp] && this.caching) {
+      // short-circuit if no styles for this char
+      // global style from object is always applyed and handled by save and restore
+      if (!charDecl && this._charWidthsCache[cacheProp] && this.caching) {
         return this._charWidthsCache[cacheProp];
       }
 
@@ -877,14 +830,19 @@
 
       ctx.lineWidth = styleDeclaration.strokeWidth || this.strokeWidth;
       ctx.font = this._getFontDeclaration.call(styleDeclaration);
-      this._setShadow.call(styleDeclaration, ctx);
 
-      if (!this.caching) {
-        return ctx.measureText(_char).width;
+      //if we want this._setShadow.call to work with styleDeclarion
+      //we have to add those references
+      if (styleDeclaration.shadow) {
+        styleDeclaration.scaleX = this.scaleX;
+        styleDeclaration.scaleY = this.scaleY;
+        styleDeclaration.canvas = this.canvas;
+        this._setShadow.call(styleDeclaration, ctx);
       }
 
-      if (!this._charWidthsCache[cacheProp]) {
-        this._charWidthsCache[cacheProp] = ctx.measureText(_char).width;
+      if (!this.caching || !this._charWidthsCache[cacheProp]) {
+        width = ctx.measureText(_char).width;
+        this.caching && (this._charWidthsCache[cacheProp] = width);
       }
 
       return this._charWidthsCache[cacheProp];
@@ -910,14 +868,64 @@
     },
 
     /**
-     * @private
      * @param {Number} lineIndex
      * @param {Number} charIndex
+     * @param {Boolean} [returnCloneOrEmpty=false]
+     * @private
      */
-    _getStyleDeclaration: function(lineIndex, charIndex) {
-      return (this.styles[lineIndex] && this.styles[lineIndex][charIndex])
-        ? clone(this.styles[lineIndex][charIndex])
-        : { };
+    _getStyleDeclaration: function(lineIndex, charIndex, returnCloneOrEmpty) {
+      if (returnCloneOrEmpty) {
+        return (this.styles[lineIndex] && this.styles[lineIndex][charIndex])
+          ? clone(this.styles[lineIndex][charIndex])
+          : { };
+      }
+
+      return this.styles[lineIndex] && this.styles[lineIndex][charIndex] ? this.styles[lineIndex][charIndex] : null;
+    },
+
+    /**
+     * @param {Number} lineIndex
+     * @param {Number} charIndex
+     * @param {Object} style
+     * @private
+     */
+    _setStyleDeclaration: function(lineIndex, charIndex, style) {
+      this.styles[lineIndex][charIndex] = style;
+    },
+
+    /**
+     *
+     * @param {Number} lineIndex
+     * @param {Number} charIndex
+     * @private
+     */
+    _deleteStyleDeclaration: function(lineIndex, charIndex) {
+      delete this.styles[lineIndex][charIndex];
+    },
+
+    /**
+     * @param {Number} lineIndex
+     * @private
+     */
+    _getLineStyle: function(lineIndex) {
+      return this.styles[lineIndex];
+    },
+
+    /**
+     * @param {Number} lineIndex
+     * @param {Object} style
+     * @private
+     */
+    _setLineStyle: function(lineIndex, style) {
+      this.styles[lineIndex] = style;
+    },
+
+    /**
+     * @param {Number} lineIndex
+     * @private
+     */
+    _deleteLineStyle: function(lineIndex) {
+      delete this.styles[lineIndex];
     },
 
     /**
@@ -925,11 +933,11 @@
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
     _getWidthOfChar: function(ctx, _char, lineIndex, charIndex) {
-      if (this.textAlign === 'justify' && /\s/.test(_char)) {
+      if (this.textAlign === 'justify' && this._reSpacesAndTabs.test(_char)) {
         return this._getWidthOfSpace(ctx, lineIndex);
       }
 
-      var styleDeclaration = this._getStyleDeclaration(lineIndex, charIndex);
+      var styleDeclaration = this._getStyleDeclaration(lineIndex, charIndex, true);
       this._applyFontStyles(styleDeclaration);
       var cacheProp = this._getCacheProp(_char, styleDeclaration);
 
@@ -948,20 +956,9 @@
      * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
-    _getHeightOfChar: function(ctx, _char, lineIndex, charIndex) {
-      if (this.styles[lineIndex] && this.styles[lineIndex][charIndex]) {
-        return this.styles[lineIndex][charIndex].fontSize || this.fontSize;
-      }
-      return this.fontSize;
-    },
-
-    /**
-     * @private
-     * @param {CanvasRenderingContext2D} ctx Context to render on
-     */
-    _getHeightOfCharAt: function(ctx, lineIndex, charIndex) {
-      var _char = this._textLines[lineIndex][charIndex];
-      return this._getHeightOfChar(ctx, _char, lineIndex, charIndex);
+    _getHeightOfChar: function(ctx, lineIndex, charIndex) {
+      var style = this._getStyleDeclaration(lineIndex, charIndex);
+      return style && style.fontSize ? style.fontSize : this.fontSize;
     },
 
     /**
@@ -999,9 +996,9 @@
         return this.__widthOfSpace[lineIndex];
       }
       var line = this._textLines[lineIndex],
-          wordsWidth = this._getWidthOfWords(ctx, line, lineIndex),
+          wordsWidth = this._getWidthOfWords(ctx, line, lineIndex, 0),
           widthDiff = this.width - wordsWidth,
-          numSpaces = line.length - line.replace(/\s+/g, '').length,
+          numSpaces = line.length - line.replace(this._reSpacesAndTabs, '').length,
           width = widthDiff / numSpaces;
       this.__widthOfSpace[lineIndex] = width;
       return width;
@@ -1013,14 +1010,14 @@
      * @param {Number} line
      * @param {Number} lineIndex
      */
-    _getWidthOfWords: function (ctx, line, lineIndex) {
+    _getWidthOfWords: function (ctx, line, lineIndex, charOffset) {
       var width = 0;
 
       for (var charIndex = 0; charIndex < line.length; charIndex++) {
         var _char = line[charIndex];
 
         if (!_char.match(/\s/)) {
-          width += this._getWidthOfChar(ctx, _char, lineIndex, charIndex);
+          width += this._getWidthOfChar(ctx, _char, lineIndex, charIndex + charOffset);
         }
       }
 
@@ -1037,15 +1034,14 @@
       }
 
       var line = this._textLines[lineIndex],
-          maxHeight = this._getHeightOfChar(ctx, line[0], lineIndex, 0);
+          maxHeight = this._getHeightOfChar(ctx, lineIndex, 0);
 
       for (var i = 1, len = line.length; i < len; i++) {
-        var currentCharHeight = this._getHeightOfChar(ctx, line[i], lineIndex, i);
+        var currentCharHeight = this._getHeightOfChar(ctx, lineIndex, i);
         if (currentCharHeight > maxHeight) {
           maxHeight = currentCharHeight;
         }
       }
-      this.__maxFontHeights[lineIndex] = maxHeight;
       this.__lineHeights[lineIndex] = maxHeight * this.lineHeight * this._fontSizeMult;
       return this.__lineHeights[lineIndex];
     },
@@ -1063,36 +1059,22 @@
     },
 
     /**
-     * This method is overwritten to account for different top offset
-     * @private
-     */
-    _renderTextBoxBackground: function(ctx) {
-      if (!this.backgroundColor) {
-        return;
-      }
-
-      ctx.save();
-      ctx.fillStyle = this.backgroundColor;
-
-      ctx.fillRect(
-        this._getLeftOffset(),
-        this._getTopOffset(),
-        this.width,
-        this.height
-      );
-
-      ctx.restore();
-    },
-
-    /**
      * Returns object representation of an instance
      * @method toObject
      * @param {Array} [propertiesToInclude] Any properties that you might want to additionally include in the output
      * @return {Object} object representation of an instance
      */
     toObject: function(propertiesToInclude) {
+      var clonedStyles = { }, i, j, row;
+      for (i in this.styles) {
+        row = this.styles[i];
+        clonedStyles[i] = { };
+        for (j in row) {
+          clonedStyles[i][j] = clone(row[j]);
+        }
+      }
       return fabric.util.object.extend(this.callSuper('toObject', propertiesToInclude), {
-        styles: clone(this.styles)
+        styles: clonedStyles
       });
     }
   });

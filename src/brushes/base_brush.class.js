@@ -1,7 +1,7 @@
 /**
  * BaseBrush class
  * @class fabric.BaseBrush
- * @see {@link http://fabricjs.com/freedrawing/|Freedrawing demo}
+ * @see {@link http://fabricjs.com/freedrawing|Freedrawing demo}
  */
 fabric.BaseBrush = fabric.util.createClass(/** @lends fabric.BaseBrush.prototype */ {
 
@@ -26,7 +26,7 @@ fabric.BaseBrush = fabric.util.createClass(/** @lends fabric.BaseBrush.prototype
    * @type fabric.Shadow
    * @default
    */
-  shadow:          null,
+  shadow:           null,
 
   /**
    * Line endings style of a brush (one of "butt", "round", "square")
@@ -47,7 +47,7 @@ fabric.BaseBrush = fabric.util.createClass(/** @lends fabric.BaseBrush.prototype
    * @type Array
    * @default
    */
-  strokeDashArray:   null,
+  strokeDashArray:  null,
 
   /**
    * Sets shadow of an object

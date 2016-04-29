@@ -16,7 +16,7 @@
   /**
    * Root object class from which all 2d shape classes inherit from
    * @class fabric.Object
-   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1/#objects}
+   * @tutorial {@link http://fabricjs.com/fabric-intro-part-1#objects}
    * @see {@link fabric.Object#initialize} for constructor definition
    *
    * @fires added
@@ -27,9 +27,12 @@
    * @fires rotating
    * @fires scaling
    * @fires moving
+   * @fires skewing
    *
    * @fires mousedown
    * @fires mouseup
+   * @fires mouseover
+   * @fires mouseout
    */
   fabric.Object = fabric.util.createClass(/** @lends fabric.Object.prototype */ {
 
@@ -313,14 +316,14 @@
     originY:                  'top',
 
     /**
-     * Top position of an object. Note that by default it's relative to object center. You can change this by setting originY={top/center/bottom}
+     * Top position of an object. Note that by default it's relative to object top. You can change this by setting originY={top/center/bottom}
      * @type Number
      * @default
      */
     top:                      0,
 
     /**
-     * Left position of an object. Note that by default it's relative to object center. You can change this by setting originX={left/center/right}
+     * Left position of an object. Note that by default it's relative to object left. You can change this by setting originX={left/center/right}
      * @type Number
      * @default
      */
@@ -381,6 +384,20 @@
      * @default
      */
     angle:                    0,
+
+    /**
+     * Angle of skew on x axes of an object (in degrees)
+     * @type Number
+     * @default
+     */
+    skewX:                    0,
+
+    /**
+     * Angle of skew on y axes of an object (in degrees)
+     * @type Number
+     * @default
+     */
+    skewY:                    0,
 
     /**
      * Size of object's controlling corners (in pixels)
@@ -663,6 +680,20 @@
     lockUniScaling:           false,
 
     /**
+     * When `true`, object horizontal skewing is locked
+     * @type Boolean
+     * @default
+     */
+    lockSkewingX:             false,
+
+    /**
+     * When `true`, object vertical skewing is locked
+     * @type Boolean
+     * @default
+     */
+    lockSkewingY:             false,
+
+    /**
      * When `true`, object cannot be flipped by scaling into negative values
      * @type Boolean
      * @default
@@ -678,7 +709,8 @@
     stateProperties:  (
       'top left width height scaleX scaleY flipX flipY originX originY transformMatrix ' +
       'stroke strokeWidth strokeDashArray strokeLineCap strokeLineJoin strokeMiterLimit ' +
-      'angle opacity fill fillRule globalCompositeOperation shadow clipTo visible backgroundColor'
+      'angle opacity fill fillRule globalCompositeOperation shadow clipTo visible backgroundColor ' +
+      'alignX alignY meetOrSlice skewX skewY'
     ).split(' '),
 
     /**
@@ -698,6 +730,9 @@
     _initGradient: function(options) {
       if (options.fill && options.fill.colorStops && !(options.fill instanceof fabric.Gradient)) {
         this.set('fill', new fabric.Gradient(options.fill));
+      }
+      if (options.stroke && options.stroke.colorStops && !(options.stroke instanceof fabric.Gradient)) {
+        this.set('stroke', new fabric.Gradient(options.stroke));
       }
     },
 
@@ -748,6 +783,9 @@
      * @param {Boolean} fromLeft When true, context is transformed to object's top/left corner. This is used when rendering text on Node
      */
     transform: function(ctx, fromLeft) {
+      if (this.group && this.canvas.preserveObjectStacking && this.group === this.canvas._activeGroup) {
+        this.group.transform(ctx);
+      }
       var center = fromLeft ? this._getLeftTopCoords() : this.getCenterPoint();
       ctx.translate(center.x, center.y);
       ctx.rotate(degreesToRadians(this.angle));
@@ -755,6 +793,8 @@
         this.scaleX * (this.flipX ? -1 : 1),
         this.scaleY * (this.flipY ? -1 : 1)
       );
+      ctx.transform(1, 0, Math.tan(degreesToRadians(this.skewX)), 1, 0, 0);
+      ctx.transform(1, Math.tan(degreesToRadians(this.skewY)), 0, 1, 0, 0);
     },
 
     /**
@@ -776,7 +816,7 @@
             fill:                     (this.fill && this.fill.toObject) ? this.fill.toObject() : this.fill,
             stroke:                   (this.stroke && this.stroke.toObject) ? this.stroke.toObject() : this.stroke,
             strokeWidth:              toFixed(this.strokeWidth, NUM_FRACTION_DIGITS),
-            strokeDashArray:          this.strokeDashArray,
+            strokeDashArray:          this.strokeDashArray ? this.strokeDashArray.concat() : this.strokeDashArray,
             strokeLineCap:            this.strokeLineCap,
             strokeLineJoin:           this.strokeLineJoin,
             strokeMiterLimit:         toFixed(this.strokeMiterLimit, NUM_FRACTION_DIGITS),
@@ -791,7 +831,10 @@
             clipTo:                   this.clipTo && String(this.clipTo),
             backgroundColor:          this.backgroundColor,
             fillRule:                 this.fillRule,
-            globalCompositeOperation: this.globalCompositeOperation
+            globalCompositeOperation: this.globalCompositeOperation,
+            transformMatrix:          this.transformMatrix ? this.transformMatrix.concat() : this.transformMatrix,
+            skewX:                    toFixed(this.skewX, NUM_FRACTION_DIGITS),
+            skewY:                    toFixed(this.skewY, NUM_FRACTION_DIGITS)
           };
 
       if (!this.includeDefaultValues) {
@@ -823,6 +866,13 @@
 
       stateProperties.forEach(function(prop) {
         if (object[prop] === prototype[prop]) {
+          delete object[prop];
+        }
+        var isArray = Object.prototype.toString.call(object[prop]) === '[object Array]' &&
+                      Object.prototype.toString.call(prototype[prop]) === '[object Array]';
+
+        // basically a check for [] === []
+        if (isArray && object[prop].length === 0 && prototype[prop].length === 0) {
           delete object[prop];
         }
       });
@@ -911,6 +961,16 @@
     },
 
     /**
+     * This callback function is called by the parent group of an object every
+     * time a non-delegated property changes on the group. It is passed the key
+     * and value as parameters. Not adding in this function's signature to avoid
+     * Travis build error about unused variables.
+     */
+    setOnGroup: function() {
+      // implemented by sub-classes, as needed.
+    },
+
+    /**
      * Toggles specified property from `true` to `false` or from `false` to `true`
      * @param {String} property Property to toggle
      * @return {fabric.Object} thisArg
@@ -976,13 +1036,12 @@
       this.clipTo && fabric.util.clipContext(this, ctx);
       this._render(ctx, noTransform);
       this.clipTo && ctx.restore();
-      this._removeShadow(ctx);
-      this._restoreCompositeOperation(ctx);
 
       ctx.restore();
     },
 
-    /* @private
+    /**
+     * @private
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
     _setOpacity: function(ctx) {
@@ -1018,25 +1077,26 @@
      * @param {Boolean} [noTransform] When true, context is not transformed
      */
     _renderControls: function(ctx, noTransform) {
-      if (!this.active || noTransform) {
+      if (!this.active || noTransform
+          || (this.group && this.group !== this.canvas.getActiveGroup())) {
         return;
       }
-      var vpt = this.getViewportTransform();
+
+      var vpt = this.getViewportTransform(),
+          matrix = this.calcTransformMatrix(),
+          options;
+      matrix = fabric.util.multiplyTransformMatrices(vpt, matrix);
+      options = fabric.util.qrDecompose(matrix);
       ctx.save();
-      var center;
-      if (this.group) {
-        center = fabric.util.transformPoint(this.group.getCenterPoint(), vpt);
-        ctx.translate(center.x, center.y);
-        ctx.rotate(degreesToRadians(this.group.angle));
+      ctx.translate(options.translateX, options.translateY);
+      if (this.group && this.group === this.canvas.getActiveGroup()) {
+        ctx.rotate(degreesToRadians(options.angle));
+        this.drawBordersInGroup(ctx, options);
       }
-      center = fabric.util.transformPoint(this.getCenterPoint(), vpt, null != this.group);
-      if (this.group) {
-        center.x *= this.group.scaleX;
-        center.y *= this.group.scaleY;
+      else {
+        ctx.rotate(degreesToRadians(this.angle));
+        this.drawBorders(ctx);
       }
-      ctx.translate(center.x, center.y);
-      ctx.rotate(degreesToRadians(this.angle));
-      this.drawBorders(ctx);
       this.drawControls(ctx);
       ctx.restore();
     },
@@ -1052,7 +1112,10 @@
 
       var multX = (this.canvas && this.canvas.viewportTransform[0]) || 1,
           multY = (this.canvas && this.canvas.viewportTransform[3]) || 1;
-
+      if (this.canvas && this.canvas._isRetinaScaling()) {
+        multX *= fabric.devicePixelRatio;
+        multY *= fabric.devicePixelRatio;
+      }
       ctx.shadowColor = this.shadow.color;
       ctx.shadowBlur = this.shadow.blur * (multX + multY) * (this.scaleX + this.scaleY) / 4;
       ctx.shadowOffsetX = this.shadow.offsetX * multX * this.scaleX;
@@ -1098,9 +1161,6 @@
         ctx.fill();
       }
       ctx.restore();
-      if (this.shadow && !this.shadow.affectStroke) {
-        this._removeShadow(ctx);
-      }
     },
 
     /**
@@ -1112,7 +1172,12 @@
         return;
       }
 
+      if (this.shadow && !this.shadow.affectStroke) {
+        this._removeShadow(ctx);
+      }
+
       ctx.save();
+
       if (this.strokeDashArray) {
         // Spec requires the concatenation of two copies the dash list when the number of elements is odd
         if (1 & this.strokeDashArray.length) {
@@ -1134,7 +1199,6 @@
         }
         this._stroke ? this._stroke(ctx) : ctx.stroke();
       }
-      this._removeShadow(ctx);
       ctx.restore();
     },
 
@@ -1261,6 +1325,7 @@
      * @param {Number} [options.r1=0] Radius of start point (only for radial gradients)
      * @param {Number} [options.r2=0] Radius of end point (only for radial gradients)
      * @param {Object} [options.colorStops] Color stops object eg. {0: 'ff0000', 1: '000000'}
+     * @param {Object} [options.gradientTransform] transforMatrix for gradient
      * @return {fabric.Object} thisArg
      * @chainable
      * @see {@link http://jsfiddle.net/fabricjs/58y8b/|jsFiddle demo}
@@ -1312,6 +1377,8 @@
         gradient.coords.r1 = options.r1;
         gradient.coords.r2 = options.r2;
       }
+
+      options.gradientTransform && (gradient.gradientTransform = options.gradientTransform);
 
       for (var position in options.colorStops) {
         var color = new fabric.Color(options.colorStops[position]);
@@ -1458,10 +1525,15 @@
      */
     getLocalPointer: function(e, pointer) {
       pointer = pointer || this.canvas.getPointer(e);
-      var objectLeftTop = this.translateToOriginPoint(this.getCenterPoint(), 'left', 'top');
+      var pClicked = new fabric.Point(pointer.x, pointer.y),
+          objectLeftTop = this._getLeftTopCoords();
+      if (this.angle) {
+        pClicked = fabric.util.rotatePoint(
+          pClicked, objectLeftTop, fabric.util.degreesToRadians(-this.angle));
+      }
       return {
-        x: pointer.x - objectLeftTop.x,
-        y: pointer.y - objectLeftTop.y
+        x: pClicked.x - objectLeftTop.x,
+        y: pClicked.y - objectLeftTop.y
       };
     },
 
@@ -1472,18 +1544,7 @@
      */
     _setupCompositeOperation: function (ctx) {
       if (this.globalCompositeOperation) {
-        this._prevGlobalCompositeOperation = ctx.globalCompositeOperation;
         ctx.globalCompositeOperation = this.globalCompositeOperation;
-      }
-    },
-
-    /**
-     * Restores previously saved canvas globalCompositeOperation after obeject rendering
-     * @param {CanvasRenderingContext2D} ctx Rendering canvas context
-     */
-    _restoreCompositeOperation: function (ctx) {
-      if (this.globalCompositeOperation && this._prevGlobalCompositeOperation) {
-        ctx.globalCompositeOperation = this._prevGlobalCompositeOperation;
       }
     }
   });
@@ -1493,7 +1554,7 @@
   /**
    * Alias for {@link fabric.Object.prototype.setAngle}
    * @alias rotate -> setAngle
-   * @memberof fabric.Object
+   * @memberOf fabric.Object
    */
   fabric.Object.prototype.rotate = fabric.Object.prototype.setAngle;
 
@@ -1503,7 +1564,7 @@
    * Defines the number of fraction digits to use when serializing object values.
    * You can use it to increase/decrease precision of such values like left, top, scaleX, scaleY, etc.
    * @static
-   * @memberof fabric.Object
+   * @memberOf fabric.Object
    * @constant
    * @type Number
    */
@@ -1512,7 +1573,7 @@
   /**
    * Unique id used internally when creating SVG elements
    * @static
-   * @memberof fabric.Object
+   * @memberOf fabric.Object
    * @type Number
    */
   fabric.Object.__uid = 0;

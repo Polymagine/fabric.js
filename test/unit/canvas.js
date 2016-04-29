@@ -2,7 +2,7 @@
 
   var EMPTY_JSON = '{"objects":[],"background":""}';
 
-  var emptyImageCanvasData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0CAYAAADL1t+KAAAH7ElEQVR4nO3VMQ0AMAzAsPInvYHoMS2yEeTLHADge/M6AADYM3QACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIuMjH4b7osLFBAAAAAElFTkSuQmCC";
+  // var emptyImageCanvasData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0CAYAAADL1t+KAAAH7ElEQVR4nO3VMQ0AMAzAsPInvYHoMS2yEeTLHADge/M6AADYM3QACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIMHQACDB0AAgwdAAIuMjH4b7osLFBAAAAAElFTkSuQmCC";
 
   var PATH_JSON = '{"objects": [{"type": "path", "originX": "left", "originY": "top", "left": 268, "top": 266, "width": 51, "height": 49,'+
                   ' "fill": "rgb(0,0,0)", "stroke": null, "strokeWidth": 1, "scaleX": 1, "scaleY": 1, '+
@@ -41,12 +41,12 @@
   var PATH_DATALESS_JSON = '{"objects":[{"type":"path","originX":"left","originY":"top","left":100,"top":100,"width":200,"height":200,"fill":"rgb(0,0,0)",'+
                            '"stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,'+
                            '"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,'+
-                           '"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","path":"http://example.com/","pathOffset":{"x":200,"y":200}}],"background":""}';
+                           '"shadow":null,"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"path":"http://example.com/","pathOffset":{"x":200,"y":200}}],"background":""}';
 
   var RECT_JSON = '{"objects":[{"type":"rect","originX":"left","originY":"top","left":0,"top":0,"width":10,"height":10,"fill":"rgb(0,0,0)",'+
                   '"stroke":null,"strokeWidth":1,"strokeDashArray":null,"strokeLineCap":"butt","strokeLineJoin":"miter","strokeMiterLimit":10,"scaleX":1,"scaleY":1,"angle":0,"flipX":false,"flipY":false,"opacity":1,'+
                   '"shadow":null,'+
-                  '"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","rx":0,"ry":0}],"background":"#ff5555","overlay":"rgba(0,0,0,0.2)"}';
+                  '"visible":true,"clipTo":null,"backgroundColor":"","fillRule":"nonzero","globalCompositeOperation":"source-over","transformMatrix":null,"skewX":0,"skewY":0,"rx":0,"ry":0}],"background":"#ff5555","overlay":"rgba(0,0,0,0.2)"}';
 
   var el = fabric.document.createElement('canvas');
   el.width = 600; el.height = 600;
@@ -58,6 +58,11 @@
   function makeRect(options) {
     var defaultOptions = { width: 10, height: 10 };
     return new fabric.Rect(fabric.util.object.extend(defaultOptions, options || { }));
+  }
+
+  function makeTriangle(options) {
+    var defaultOptions = { width: 10, height: 10 };
+    return new fabric.Triangle(fabric.util.object.extend(defaultOptions, options || { }));
   }
 
   QUnit.module('fabric.Canvas', {
@@ -216,12 +221,139 @@
 
   test('findTarget', function() {
     ok(typeof canvas.findTarget == 'function');
+    var rect = makeRect({ left: 0, top: 0 }), target;
+    canvas.add(rect);
+    target = canvas.findTarget({
+      clientX: 5, clientY: 5
+    }, true);
+    equal(target, rect, 'Should return the rect');
+    target = canvas.findTarget({
+      clientX: 30, clientY: 30
+    }, true);
+    equal(target, null, 'Should not find target');
+    canvas.remove(rect);
+  });
+
+  test('findTarget with perPixelTargetFind', function() {
+    ok(typeof canvas.findTarget == 'function');
+    var triangle = makeTriangle({ left: 0, top: 0 }), target;
+    canvas.add(triangle);
+    target = canvas.findTarget({
+      clientX: 2, clientY: 1
+    }, true);
+    equal(target, triangle, 'Should return the triangle by bounding box');
+    //TODO find out why this stops the tests
+    //canvas.perPixelTargetFind = true;
+    //target = canvas.findTarget({
+    //  clientX: 2, clientY: 1
+    //}, true);
+    //equal(target, null, 'Should return null because of transparency checks');
+    target = canvas.findTarget({
+      clientX: 5, clientY: 5
+    }, true);
+    equal(target, triangle, 'Should return the triangle now');
+    canvas.perPixelTargetFind = false;
+    canvas.remove(triangle);
+  });
+
+  test('findTarget on activegroup', function() {
+    var rect1 = makeRect({ left: 0, top: 0 }), target;
+    var rect2 = makeRect({ left: 20, top: 0 });
+    canvas.add(rect1);
+    canvas.add(rect2);
+    var group = new fabric.Group([ rect1, rect2 ]);
+    canvas.add(group);
+    canvas.setActiveGroup(group);
+    target = canvas.findTarget({
+      clientX: 5, clientY: 5
+    }, true);
+    equal(target, group, 'Should return the activegroup');
+    //TODO: make it work with perPixelTargetFind
+  });
+
+  test('activeGroup sendToBack', function() {
+
+    var rect1 = makeRect(),
+        rect2 = makeRect(),
+        rect3 = makeRect(),
+        rect4 = makeRect();
+
+    canvas.add(rect1, rect2, rect3, rect4);
+
+    var group = new fabric.Group([ rect3, rect4 ]);
+    canvas.setActiveGroup(group);
+    equal(canvas._objects[0], rect1, 'rect1 should be last');
+    equal(canvas._objects[1], rect2, 'rect2 should be second');
+    canvas.sendToBack(group);
+    equal(canvas._objects[0], rect3, 'rect3 should be the new last');
+    equal(canvas._objects[1], rect4, 'rect3 should be the new second');
+    equal(canvas._objects[2], rect1, 'rect1 should be the third object');
+    equal(canvas._objects[3], rect2, 'rect2 should be on top now');
+  });
+  
+  test('activeGroup bringToFront', function() {
+
+    var rect1 = makeRect(),
+        rect2 = makeRect(),
+        rect3 = makeRect(),
+        rect4 = makeRect();
+
+    canvas.add(rect1, rect2, rect3, rect4);
+
+    var group = new fabric.Group([ rect1, rect2 ]);
+    canvas.setActiveGroup(group);
+    equal(canvas._objects[0], rect1, 'rect1 should be last');
+    equal(canvas._objects[1], rect2, 'rect2 should be second');
+    canvas.bringToFront(group);
+    equal(canvas._objects[0], rect3, 'rect3 should be the new last');
+    equal(canvas._objects[1], rect4, 'rect3 should be the new second');
+    equal(canvas._objects[2], rect1, 'rect1 should be the third object');
+    equal(canvas._objects[3], rect2, 'rect2 should be on top now');
+  });
+
+  test('activeGroup bringForward', function() {
+
+    var rect1 = makeRect(),
+        rect2 = makeRect(),
+        rect3 = makeRect(),
+        rect4 = makeRect();
+
+    canvas.add(rect1, rect2, rect3, rect4);
+
+    var group = new fabric.Group([ rect1, rect2 ]);
+    canvas.setActiveGroup(group);
+    equal(canvas._objects[0], rect1, 'rect1 should be last');
+    equal(canvas._objects[1], rect2, 'rect2 should be second');
+    canvas.bringForward(group);
+    equal(canvas._objects[0], rect3, 'rect3 should be the new last');
+    equal(canvas._objects[1], rect1, 'rect1 should be the new second');
+    equal(canvas._objects[2], rect2, 'rect2 should be the third object');
+    equal(canvas._objects[3], rect4, 'rect4 did not move');
+  });
+
+  test('activeGroup sendBackwards', function() {
+    var rect1 = makeRect(),
+        rect2 = makeRect(),
+        rect3 = makeRect(),
+        rect4 = makeRect();
+
+    canvas.add(rect1, rect2, rect3, rect4);
+
+    var group = new fabric.Group([ rect3, rect4 ]);
+    canvas.setActiveGroup(group);
+    equal(canvas._objects[0], rect1, 'rect1 should be last');
+    equal(canvas._objects[1], rect2, 'rect2 should be second');
+    canvas.sendBackwards(group);
+    equal(canvas._objects[0], rect1, 'rect1 is still last');
+    equal(canvas._objects[1], rect3, 'rect3 should be shifted down by 1');
+    equal(canvas._objects[2], rect4, 'rect4 should be shifted down by 1');
+    equal(canvas._objects[3], rect2, 'rect2 is the new top');
   });
 
   test('toDataURL', function() {
     ok(typeof canvas.toDataURL == 'function');
     if (!fabric.Canvas.supports('toDataURL')) {
-      alert("toDataURL is not supported by this environment. Some of the tests can not be run.");
+      window.alert("toDataURL is not supported by this environment. Some of the tests can not be run.");
     }
     else {
       var dataURL = canvas.toDataURL();
@@ -232,26 +364,24 @@
     }
   });
 
-  // asyncTest('getPointer', function() {
-  //   ok(typeof canvas.getPointer == 'function');
+//  asyncTest('getPointer', function() {
+//    ok(typeof canvas.getPointer == 'function');
+//
+//    fabric.util.addListener(upperCanvasEl, 'click', function(e) {
+//       canvas.calcOffset();
+//       var pointer = canvas.getPointer(e);
+//       equal(pointer.x, 101, 'pointer.x should be correct');
+//       equal(pointer.y, 102, 'pointer.y should be correct');
+//
+//       start();
+//   });
 
-  //   window.scroll(0, 0);
-
-  //   fabric.util.addListener(upperCanvasEl, 'click', function(e) {
-  //     canvas.calcOffset();
-  //     var pointer = canvas.getPointer(e);
-  //     equal(pointer.x, 101, 'pointer.x should be correct');
-  //     equal(pointer.y, 102, 'pointer.y should be correct');
-
-  //     start();
-  //   });
-
-  //   setTimeout(function() {
-  //     simulateEvent(upperCanvasEl, 'click', {
-  //       pointerX: 101, pointerY: 102
-  //     });
-  //   }, 100);
-  // });
+//     setTimeout(function() {
+//       simulateEvent(upperCanvasEl, 'click', {
+//         pointerX: 101, pointerY: 102
+//       });
+//     }, 100);
+// });
 
   test('getCenter', function() {
     ok(typeof canvas.getCenter == 'function');
@@ -288,7 +418,7 @@
 
   test('straightenObject', function() {
     ok(typeof canvas.straightenObject == 'function');
-    var rect = makeRect({ angle: 10 })
+    var rect = makeRect({ angle: 10 });
     canvas.add(rect);
     equal(canvas.straightenObject(rect), canvas, 'should be chainable');
     equal(rect.getAngle(), 0, 'angle should be coerced to 0 (from 10)');
@@ -461,7 +591,7 @@
     }, reviver);
   });
 
-  asyncTest('loadFromJSON with no objects', function() {
+  test('loadFromJSON with no objects', function() {
     var c1 = new fabric.Canvas('c1', { backgroundColor: 'green', overlayColor: 'yellow' }),
         c2 = new fabric.Canvas('c2', { backgroundColor: 'red', overlayColor: 'orange' });
 
@@ -473,11 +603,11 @@
       ok(fired, 'Callback should be fired even if no objects');
       equal(c2.backgroundColor, 'green', 'Color should be set properly');
       equal(c2.overlayColor, 'yellow', 'Color should be set properly');
-      start();
+      
     });
   });
 
-  asyncTest('loadFromJSON without "objects" property', function() {
+  test('loadFromJSON without "objects" property', function() {
     var c1 = new fabric.Canvas('c1', { backgroundColor: 'green', overlayColor: 'yellow' }),
         c2 = new fabric.Canvas('c2', { backgroundColor: 'red', overlayColor: 'orange' });
 
@@ -492,11 +622,11 @@
       ok(fired, 'Callback should be fired even if no "objects" property exists');
       equal(c2.backgroundColor, 'green', 'Color should be set properly');
       equal(c2.overlayColor, 'yellow', 'Color should be set properly');
-      start();
+      
     });
   });
 
-  asyncTest('loadFromJSON with empty fabric.Group', function() {
+  test('loadFromJSON with empty fabric.Group', function() {
     var c1 = new fabric.Canvas('c1'),
         c2 = new fabric.Canvas('c2'),
         group = new fabric.Group();
@@ -510,7 +640,6 @@
       fired = true;
 
       ok(fired, 'Callback should be fired even if empty fabric.Group exists');
-      start();
     });
   });
 
@@ -805,7 +934,6 @@
     var eventsFired = {
       selectionCleared: false
     };
-    var target;
 
     canvas.on('selection:cleared', function(){
       eventsFired.selectionCleared = true;
@@ -853,6 +981,73 @@
     equal(svg, svgWithActiveGroup);
   });
 
+  test('active group objects reordering', function() {
+    var rect1 = new fabric.Rect({ width: 30, height: 30, left: 130, top: 130 });
+    var rect2 = new fabric.Rect({ width: 50, height: 50, left: 100, top: 100 });
+    var circle1 = new fabric.Circle({ radius: 10, left: 60, top: 60 });
+    var circle2 = new fabric.Circle({ radius: 50, left: 50, top: 50 });
+    canvas.add(rect1, rect2, circle1, circle2);
+    equal(canvas._objects[0], rect1);
+    equal(canvas._objects[1], rect2);
+    equal(canvas._objects[2], circle1);
+    equal(canvas._objects[3], circle2);
+    var aGroup = new fabric.Group([ rect2, circle2, rect1, circle1 ]);
+    // before rendering objects are ordered in insert order
+    equal(aGroup._objects[0], rect2);
+    equal(aGroup._objects[1], circle2);
+    equal(aGroup._objects[2], rect1);
+    equal(aGroup._objects[3], circle1);
+    canvas.setActiveGroup(aGroup).renderAll();
+    // after rendering objects are ordered in canvas stack order
+    equal(aGroup._objects[0], rect1);
+    equal(aGroup._objects[1], rect2);
+    equal(aGroup._objects[2], circle1);
+    equal(aGroup._objects[3], circle2);
+  });
+  
+  test('dispose', function() {
+    //made local vars to do not dispose the external canvas
+    var el = fabric.document.createElement('canvas'),
+        parentEl = fabric.document.createElement('div'),
+        wrapperEl, lowerCanvasEl, upperCanvasEl;
+    el.width = 200; el.height = 200;
+    parentEl.className = 'rootNode';
+    parentEl.appendChild(el);
+
+    equal(parentEl.firstChild, el, 'canvas should be appended at partentEl');
+    equal(parentEl.childNodes.length, 1, 'parentEl has 1 child only');
+
+    var canvas = fabric.isLikelyNode ? fabric.createCanvasForNode() : new fabric.Canvas(el);
+    wrapperEl = canvas.wrapperEl;
+    lowerCanvasEl = canvas.lowerCanvasEl;
+    upperCanvasEl = canvas.upperCanvasEl;
+    equal(parentEl.childNodes.length, 1, 'parentEl has still 1 child only');
+    equal(wrapperEl.childNodes.length, 2, 'wrapper should have 2 children');
+    equal(wrapperEl.tagName, 'DIV', 'We wrapped canvas with DIV');
+    equal(wrapperEl.className, canvas.containerClass, 'DIV class should be set');
+    equal(wrapperEl.childNodes[0], lowerCanvasEl, 'First child should be lowerCanvas');
+    equal(wrapperEl.childNodes[1], upperCanvasEl, 'Second child should be upperCanvas');
+    if (!fabric.isLikelyNode) {
+      equal(parentEl.childNodes[0], wrapperEl, 'wrapperEl is appendend to rootNode');
+    }
+    //looks like i cannot use parentNode
+    //equal(wrapperEl, lowerCanvasEl.parentNode, 'lowerCanvas is appended to wrapperEl');
+    //equal(wrapperEl, upperCanvasEl.parentNode, 'upperCanvas is appended to wrapperEl');
+    //equal(parentEl, wrapperEl.parentNode, 'wrapperEl is appendend to rootNode');
+    equal(parentEl.childNodes.length, 1, 'parent div should have 1 child');
+    notEqual(parentEl.firstChild, canvas.getElement(), 'canvas should not be parent div firstChild');
+    ok(typeof canvas.dispose == 'function');
+    canvas.add(makeRect(), makeRect(), makeRect());
+    canvas.dispose();
+    equal(canvas.getObjects().length, 0, 'dispose should clear canvas');
+    equal(parentEl.childNodes.length, 1, 'parent has always 1 child');
+    if (!fabric.isLikelyNode) {
+      equal(parentEl.childNodes[0], lowerCanvasEl, 'canvas should be back to its firstChild place');
+    }
+    equal(canvas.wrapperEl, null, 'wrapperEl should be deleted');
+    equal(canvas.upperCanvasEl, null, 'upperCanvas should be deleted');
+  });
+  
   // test('dispose', function() {
   //   function invokeEventsOnCanvas() {
   //     // nextSibling because we need to invoke events on upper canvas

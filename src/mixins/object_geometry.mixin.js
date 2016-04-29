@@ -1,6 +1,16 @@
 (function() {
 
-  var degreesToRadians = fabric.util.degreesToRadians;
+  function getCoords(oCoords) {
+    return [
+      new fabric.Point(oCoords.tl.x, oCoords.tl.y),
+      new fabric.Point(oCoords.tr.x, oCoords.tr.y),
+      new fabric.Point(oCoords.br.x, oCoords.br.y),
+      new fabric.Point(oCoords.bl.x, oCoords.bl.y)
+    ];
+  }
+
+  var degreesToRadians = fabric.util.degreesToRadians,
+      multiplyMatrices = fabric.util.multiplyTransformMatrices;
 
   fabric.util.object.extend(fabric.Object.prototype, /** @lends fabric.Object.prototype */ {
 
@@ -18,13 +28,9 @@
      * @return {Boolean} true if object intersects with an area formed by 2 points
      */
     intersectsWithRect: function(pointTL, pointBR) {
-      var oCoords = this.oCoords,
-          tl = new fabric.Point(oCoords.tl.x, oCoords.tl.y),
-          tr = new fabric.Point(oCoords.tr.x, oCoords.tr.y),
-          bl = new fabric.Point(oCoords.bl.x, oCoords.bl.y),
-          br = new fabric.Point(oCoords.br.x, oCoords.br.y),
+      var oCoords = getCoords(this.oCoords),
           intersection = fabric.Intersection.intersectPolygonRectangle(
-            [tl, tr, br, bl],
+            oCoords,
             pointTL,
             pointBR
           );
@@ -37,20 +43,9 @@
      * @return {Boolean} true if object intersects with another object
      */
     intersectsWithObject: function(other) {
-      // extracts coords
-      function getCoords(oCoords) {
-        return {
-          tl: new fabric.Point(oCoords.tl.x, oCoords.tl.y),
-          tr: new fabric.Point(oCoords.tr.x, oCoords.tr.y),
-          bl: new fabric.Point(oCoords.bl.x, oCoords.bl.y),
-          br: new fabric.Point(oCoords.br.x, oCoords.br.y)
-        };
-      }
-      var thisCoords = getCoords(this.oCoords),
-          otherCoords = getCoords(other.oCoords),
-          intersection = fabric.Intersection.intersectPolygonPolygon(
-            [thisCoords.tl, thisCoords.tr, thisCoords.br, thisCoords.bl],
-            [otherCoords.tl, otherCoords.tr, otherCoords.br, otherCoords.bl]
+      var intersection = fabric.Intersection.intersectPolygonPolygon(
+            getCoords(this.oCoords),
+            getCoords(other.oCoords)
           );
 
       return intersection.status === 'Intersection';
@@ -198,23 +193,12 @@
      */
     getBoundingRect: function() {
       this.oCoords || this.setCoords();
-
-      var xCoords = [this.oCoords.tl.x, this.oCoords.tr.x, this.oCoords.br.x, this.oCoords.bl.x],
-          minX = fabric.util.array.min(xCoords),
-          maxX = fabric.util.array.max(xCoords),
-          width = Math.abs(minX - maxX),
-
-          yCoords = [this.oCoords.tl.y, this.oCoords.tr.y, this.oCoords.br.y, this.oCoords.bl.y],
-          minY = fabric.util.array.min(yCoords),
-          maxY = fabric.util.array.max(yCoords),
-          height = Math.abs(minY - maxY);
-
-      return {
-        left: minX,
-        top: minY,
-        width: width,
-        height: height
-      };
+      return fabric.util.makeBoundingBoxFromPoints([
+        this.oCoords.tl,
+        this.oCoords.tr,
+        this.oCoords.br,
+        this.oCoords.bl
+      ]);
     },
 
     /**
@@ -222,7 +206,8 @@
      * @return {Number} width value
      */
     getWidth: function() {
-      return this.width * this.scaleX;
+      //needs to be changed
+      return this._getTransformedDimensions().x;
     },
 
     /**
@@ -230,7 +215,8 @@
      * @return {Number} height value
      */
     getHeight: function() {
-      return this.height * this.scaleY;
+      //needs to be changed
+      return this._getTransformedDimensions().y;
     },
 
     /**
@@ -280,7 +266,7 @@
      */
     scaleToWidth: function(value) {
       // adjust to bounding rect factor so that rotated shapes would fit as well
-      var boundingRectFactor = this.getBoundingRectWidth() / this.getWidth();
+      var boundingRectFactor = this.getBoundingRect().width / this.getWidth();
       return this.scale(value / this.width / boundingRectFactor);
     },
 
@@ -292,7 +278,7 @@
      */
     scaleToHeight: function(value) {
       // adjust to bounding rect factor so that rotated shapes would fit as well
-      var boundingRectFactor = this.getBoundingRectHeight() / this.getHeight();
+      var boundingRectFactor = this.getBoundingRect().height / this.getHeight();
       return this.scale(value / this.height / boundingRectFactor);
     },
 
@@ -305,39 +291,27 @@
     setCoords: function() {
       var theta = degreesToRadians(this.angle),
           vpt = this.getViewportTransform(),
-          f = function (p) {
-            return fabric.util.transformPoint(p, vpt);
-          },
-          p = this._calculateCurrentDimensions(false),
-          currentWidth = p.x, currentHeight = p.y;
+          dim = this._calculateCurrentDimensions(),
+          currentWidth = dim.x, currentHeight = dim.y;
 
       // If width is negative, make postive. Fixes path selection issue
       if (currentWidth < 0) {
         currentWidth = Math.abs(currentWidth);
       }
 
-      var _hypotenuse = Math.sqrt(
-            Math.pow(currentWidth / 2, 2) +
-            Math.pow(currentHeight / 2, 2)),
-
-          _angle = Math.atan(
-            isFinite(currentHeight / currentWidth)
-              ? currentHeight / currentWidth
-              : 0),
-
-          // offset added for rotate and scale actions
+      var sinTh = Math.sin(theta),
+          cosTh = Math.cos(theta),
+          _angle = currentWidth > 0 ? Math.atan(currentHeight / currentWidth) : 0,
+          _hypotenuse = (currentWidth / Math.cos(_angle)) / 2,
           offsetX = Math.cos(_angle + theta) * _hypotenuse,
           offsetY = Math.sin(_angle + theta) * _hypotenuse,
-          sinTh = Math.sin(theta),
-          cosTh = Math.cos(theta),
-          coords = this.getCenterPoint(),
-          wh = new fabric.Point(currentWidth, currentHeight),
-          _tl =   new fabric.Point(coords.x - offsetX, coords.y - offsetY),
-          _tr =   new fabric.Point(_tl.x + (wh.x * cosTh),   _tl.y + (wh.x * sinTh)),
-          bl =  f(new fabric.Point(_tl.x - (wh.y * sinTh),   _tl.y + (wh.y * cosTh))),
-          br  = f(new fabric.Point(_tr.x - (wh.y * sinTh),   _tr.y + (wh.y * cosTh))),
-          tl  = f(_tl),
-          tr  = f(_tr),
+
+          // offset added for rotate and scale actions
+          coords = fabric.util.transformPoint(this.getCenterPoint(), vpt),
+          tl  = new fabric.Point(coords.x - offsetX, coords.y - offsetY),
+          tr  = new fabric.Point(tl.x + (currentWidth * cosTh), tl.y + (currentWidth * sinTh)),
+          bl  = new fabric.Point(tl.x - (currentHeight * sinTh), tl.y + (currentHeight * cosTh)),
+          br  = new fabric.Point(coords.x + offsetX, coords.y + offsetY),
           ml  = new fabric.Point((tl.x + bl.x)/2, (tl.y + bl.y)/2),
           mt  = new fabric.Point((tr.x + tl.x)/2, (tr.y + tl.y)/2),
           mr  = new fabric.Point((br.x + tr.x)/2, (br.y + tr.y)/2),
@@ -371,6 +345,36 @@
       this._setCornerCoords && this._setCornerCoords();
 
       return this;
+    },
+
+    _calcRotateMatrix: function() {
+      if (this.angle) {
+        var theta = degreesToRadians(this.angle), cos = Math.cos(theta), sin = Math.sin(theta);
+        return [cos, sin, -sin, cos, 0, 0];
+      }
+      return [1, 0, 0, 1, 0, 0];
+    },
+
+    calcTransformMatrix: function() {
+      var center = this.getCenterPoint(),
+          translateMatrix = [1, 0, 0, 1, center.x, center.y],
+          rotateMatrix = this._calcRotateMatrix(),
+          dimensionMatrix = this._calcDimensionsTransformMatrix(this.skewX, this.skewY, true),
+          matrix = this.group ? this.group.calcTransformMatrix() : [1, 0, 0, 1, 0, 0];
+      matrix = multiplyMatrices(matrix, translateMatrix);
+      matrix = multiplyMatrices(matrix, rotateMatrix);
+      matrix = multiplyMatrices(matrix, dimensionMatrix);
+      return matrix;
+    },
+
+    _calcDimensionsTransformMatrix: function(skewX, skewY, flipping) {
+      var skewMatrixX = [1, 0, Math.tan(degreesToRadians(skewX)), 1],
+          skewMatrixY = [1, Math.tan(degreesToRadians(skewY)), 0, 1],
+          scaleX = this.scaleX * (flipping && this.flipX ? -1 : 1),
+          scaleY = this.scaleY * (flipping && this.flipY ? -1 : 1),
+          scaleMatrix = [scaleX, 0, 0, scaleY],
+          m = multiplyMatrices(scaleMatrix, skewMatrixX, true);
+      return multiplyMatrices(m, skewMatrixY, true);
     }
   });
 })();
