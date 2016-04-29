@@ -208,7 +208,8 @@
           left = -(width / 2),
           top = -(height / 2),
           scaleOffset = this.cornerSize / 2,
-          methodName = this.transparentCorners ? 'strokeRect' : 'fillRect';
+//          methodName = this.transparentCorners ? 'strokeRect' : 'fillRect';
+		  methodName = this.transparentCorners ? 'stroke' : 'fill';
 
       ctx.save();
 
@@ -280,8 +281,13 @@
         return;
       }
       var size = this.cornerSize;
-      isVML() || this.transparentCorners || ctx.clearRect(left, top, size, size);
-      ctx[methodName](left, top, size, size);
+	  var radius = size / 2;
+      isVML() || this.transparentCorners;// || ctx.clearRect(left, top, size, size);
+
+	  ctx.beginPath();
+	  ctx.arc(left + radius, top + radius, radius, 0, 2 * Math.PI);
+	  ctx[methodName]();
+      //ctx[methodName](left, top, size, size);
     },
 
     /**
