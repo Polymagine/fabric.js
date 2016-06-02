@@ -119,7 +119,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
 	  + Math.abs( this.__mousedownY - pointer.y );
 	var deltaTime = ( e.timeStamp || 0 ) - this.__mousedownTime;
 
-	return ( delatTime > 200 && deltaMove > 5) || deltaMove > 100;
+	return ( deltaTime > 200 && deltaMove > 5) || deltaMove > 100;
   },
 
   /**
