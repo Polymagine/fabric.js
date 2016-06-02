@@ -404,7 +404,7 @@
      * @type Number
      * @default
      */
-    cornerSize:               12,
+    cornerSize:               13,
 
     /**
      * When true, object's controlling corners are rendered as transparent inside (i.e. stroke instead of fill)
@@ -421,6 +421,13 @@
     hoverCursor:              null,
 
     /**
+     * Default cursor value used when moving this object on canvas
+     * @type String
+     * @default
+     */
+    moveCursor:               null,
+
+    /**
      * Padding between object and its controlling borders (in pixels)
      * @type Number
      * @default
@@ -435,11 +442,40 @@
     borderColor:              'rgba(102,153,255,0.75)',
 
     /**
+     * Array specifying dash pattern of an object's borders (hasBorder must be true)
+     * @since 1.6.2
+     * @type Array
+     */
+    borderDashArray:          null,
+
+    /**
      * Color of controlling corners of an object (when it's active)
      * @type String
      * @default
      */
     cornerColor:              'rgba(102,153,255,0.5)',
+
+    /**
+     * Color of controlling corners of an object (when it's active and transparentCorners false)
+     * @since 1.6.2
+     * @type String
+     * @default
+     */
+    cornerStrokeColor:        null,
+
+    /**
+     * Specify style of control, 'rect' or 'circle'
+     * @since 1.6.2
+     * @type String
+     */
+    cornerStyle:          'rect',
+
+    /**
+     * Array specifying dash pattern of an object's control (hasBorder must be true)
+     * @since 1.6.2
+     * @type Array
+     */
+    cornerDashArray:          null,
 
     /**
      * When true, this object will use center point as the origin of transformation
@@ -490,6 +526,14 @@
      * @default
      */
     backgroundColor:          '',
+
+    /**
+     * Selection Background color of an object. colored layer behind the object when it is active.
+     * does not mix good with globalCompositeOperation methods.
+     * @type String
+     * @default
+     */
+    selectionBackgroundColor:          '',
 
     /**
      * When defined, an object is rendered via stroke and this property specifies its color
@@ -948,14 +992,15 @@
         this.flipY = !this.flipY;
         value *= -1;
       }
-      else if (key === 'width' || key === 'height') {
-        this.minScaleLimit = toFixed(Math.min(0.1, 1/Math.max(this.width, this.height)), 2);
-      }
       else if (key === 'shadow' && value && !(value instanceof fabric.Shadow)) {
         value = new fabric.Shadow(value);
       }
 
       this[key] = value;
+
+      if (key === 'width' || key === 'height') {
+        this.minScaleLimit = Math.min(0.1, 1/Math.max(this.width, this.height));
+      }
 
       return this;
     },
@@ -1023,6 +1068,7 @@
 
       //setup fill rule for current object
       this._setupCompositeOperation(ctx);
+      this.drawSelectionBackground(ctx);
       if (!noTransform) {
         this.transform(ctx);
       }
@@ -1072,6 +1118,29 @@
     },
 
     /**
+     * @private
+     * Sets line dash
+     * @param {CanvasRenderingContext2D} ctx Context to set the dash line on
+     * @param {Array} dashArray array representing dashes
+     * @param {Function} alternative function to call if browaser does not support lineDash
+     */
+    _setLineDash: function(ctx, dashArray, alternative) {
+      if (!dashArray) {
+        return;
+      }
+      // Spec requires the concatenation of two copies the dash list when the number of elements is odd
+      if (1 & dashArray.length) {
+        dashArray.push.apply(dashArray, dashArray);
+      }
+      if (supportsLineDash) {
+        ctx.setLineDash(dashArray);
+      }
+      else {
+        alternative && alternative(ctx);
+      }
+    },
+
+    /**
      * Renders controls and borders for the object
      * @param {CanvasRenderingContext2D} ctx Context to render on
      * @param {Boolean} [noTransform] When true, context is not transformed
@@ -1087,8 +1156,12 @@
           options;
       matrix = fabric.util.multiplyTransformMatrices(vpt, matrix);
       options = fabric.util.qrDecompose(matrix);
+
       ctx.save();
       ctx.translate(options.translateX, options.translateY);
+      ctx.lineWidth = 1 / this.borderScaleFactor;
+      ctx.globalAlpha = this.isMoving ? this.borderOpacityWhenMoving : 1;
+
       if (this.group && this.group === this.canvas.getActiveGroup()) {
         ctx.rotate(degreesToRadians(options.angle));
         this.drawBordersInGroup(ctx, options);
@@ -1178,27 +1251,17 @@
 
       ctx.save();
 
-      if (this.strokeDashArray) {
-        // Spec requires the concatenation of two copies the dash list when the number of elements is odd
-        if (1 & this.strokeDashArray.length) {
-          this.strokeDashArray.push.apply(this.strokeDashArray, this.strokeDashArray);
-        }
-        if (supportsLineDash) {
-          ctx.setLineDash(this.strokeDashArray);
-          this._stroke && this._stroke(ctx);
-        }
-        else {
-          this._renderDashedStroke && this._renderDashedStroke(ctx);
-        }
-        ctx.stroke();
+      this._setLineDash(ctx, this.strokeDashArray, this._renderDashedStroke);
+      if (this.stroke.gradientTransform) {
+        var g = this.stroke.gradientTransform;
+        ctx.transform.apply(ctx, g);
       }
-      else {
-        if (this.stroke.gradientTransform) {
-          var g = this.stroke.gradientTransform;
-          ctx.transform.apply(ctx, g);
-        }
-        this._stroke ? this._stroke(ctx) : ctx.stroke();
+      if (this.stroke.toLive) {
+        ctx.translate(
+          -this.width / 2 + this.stroke.offsetX || 0,
+          -this.height / 2 + this.stroke.offsetY || 0);
       }
+      ctx.stroke();
       ctx.restore();
     },
 
@@ -1270,7 +1333,7 @@
       };
 
       this.set('active', false);
-      this.setPositionByOrigin(new fabric.Point(el.width / 2, el.height / 2), 'center', 'center');
+      this.setPositionByOrigin(new fabric.Point(canvas.getWidth() / 2, canvas.getHeight() / 2), 'center', 'center');
 
       var originalCanvas = this.canvas;
       canvas.add(this);
