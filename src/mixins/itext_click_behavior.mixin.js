@@ -89,6 +89,7 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
       }
       var pointer = this.canvas.getPointer(options.e);
 
+	  this.__mousedownTime = options.e.timeStamp || 0;
       this.__mousedownX = pointer.x;
       this.__mousedownY = pointer.y;
       this.__isMousedown = true;
@@ -114,8 +115,11 @@ fabric.util.object.extend(fabric.IText.prototype, /** @lends fabric.IText.protot
   _isObjectMoved: function(e) {
     var pointer = this.canvas.getPointer(e);
 
-    return this.__mousedownX !== pointer.x ||
-           this.__mousedownY !== pointer.y;
+	var deltaMove = Math.abs( this.__mousedownX - pointer.x )
+	  + Math.abs( this.__mousedownY - pointer.y );
+	var deltaTime = ( e.timeStamp || 0 ) - this.__mousedownTime;
+
+	return ( delatTime > 200 && deltaMove > 5) || deltaMove > 100;
   },
 
   /**
